@@ -1,0 +1,231 @@
+/* Mobile-first: primary use case is phone-in-hand, about to drive. */
+
+:root {
+  --bg: #f4f6f8;
+  --card: #ffffff;
+  --ink: #1a1d21;
+  --muted: #5f6b7a;
+  --accent: #0a7d3b;
+  --accent-ink: #ffffff;
+  --line: #e2e6ea;
+  --warn: #b45309;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.screen.center {
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 40px;
+}
+
+h1 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 12px;
+  border: none;
+}
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 14px 20px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+button.primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--ink);
+  padding: 8px 12px;
+  font-size: 1rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+label.row {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  color: var(--ink);
+  padding: 6px 0;
+}
+
+select,
+input[type='checkbox'] {
+  accent-color: var(--accent);
+}
+
+select {
+  font: inherit;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+}
+
+select:disabled {
+  opacity: 0.5;
+}
+
+input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notice {
+  color: var(--warn);
+  margin: 0;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Fuel gauge: E left, F right, hash marks at each quarter tank (PRD §5.2). */
+.gauge {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.ticks span {
+  width: 2px;
+  height: 12px;
+  background: var(--muted);
+  border-radius: 1px;
+}
+
+.gauge input[type='range'] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+  height: 36px;
+}
+
+.gauge-labels {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.dots span.on {
+  background: var(--accent);
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.savings {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0;
+}
+
+.attribution {
+  margin-top: auto;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+}

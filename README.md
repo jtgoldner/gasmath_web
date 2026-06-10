@@ -1,0 +1,45 @@
+# GasMath
+
+**Which gas station is actually cheapest for you to fill up at, right now?**
+
+GasMath is a decision engine, not a directory. It computes the *true total cost* of each
+fill-up option — live station prices, real driving distance, your vehicle's MPG, and how
+much fuel you actually need — and gives you **one verdict, never a list**.
+
+```
+gallons_needed = slider_fraction × tank_capacity
+detour_gallons = round_trip_extra_miles ÷ vehicle_mpg
+effective_cost = (gallons_needed + detour_gallons) × station_price
+```
+
+No accounts, no login, no server-side user data — all personalization lives in your
+browser's localStorage.
+
+## Status
+
+| Milestone | Scope | Status |
+|---|---|---|
+| 1 | Project scaffold + fully tested decision engine | ✅ Done |
+| 2 | UI (onboarding, fuel gauge, verdict, settings) against a mock provider | ✅ Done |
+| 3 | Live data: Google Places proxy, OpenRouteService routing, vehicle + Top Tier datasets | ⏳ Next |
+| 4 | Launch: PWA, GA4, attribution assets, legal pages, gasmath.app DNS | ⏳ |
+
+## Development
+
+```sh
+npm install
+npm run dev     # local dev server
+npm test        # engine test suite (Vitest)
+npm run build   # type-check + production build
+```
+
+## Documents
+
+- [PRD.md](PRD.md) — product requirements; the source of truth for behavior
+- [CLAUDE.md](CLAUDE.md) — engineering briefing, hard rules, and architecture
+
+## Architecture
+
+Static PWA (Vite + vanilla TypeScript) deployed on Vercel, with one serverless function
+proxying the Google Places API (the key never reaches the client). Pure decision engine
+in [`src/engine`](src/engine) — same inputs, same verdict, fully unit-tested.
