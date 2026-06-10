@@ -23,7 +23,7 @@ GasMath (https://gasmath.app) answers one question: **which gas station is actua
 
 ## Architecture
 
-- **Frontend:** static PWA (vanilla or lightweight framework — keep deps minimal), deployed from this repo via Cloudflare Pages or Vercel. Domain gasmath.app (Namecheap DNS). `.app` is HSTS-preloaded; HTTPS is automatic via host.
+- **Frontend:** static PWA (vanilla or lightweight framework — keep deps minimal), deployed from this repo via **Vercel** (PRD §3/§7). Free Hobby tier is acceptable only while the app is ad-free and non-monetized; before any direct monetization, move to a paid plan or Cloudflare. Domain gasmath.app (Namecheap DNS). `.app` is HSTS-preloaded; HTTPS is automatic via host.
 - **Edge proxy:** one serverless function holding the Google Places API key. Responsibilities: call Nearby Search (New) with `fuelOptions` field mask; enforce daily quota discipline. **Caching constraint (PRD Q9):** Google's Places policy restricts caching content — place IDs may be stored indefinitely; price data is pass-through or short transient TTL only. Verify against GMP Service Specific Terms before adding any shared cache.
 - **Routing:** OpenRouteService for real driving distances (free tier, key also in env vars). Pre-filter candidates before fan-out — don't route to all 20 stations if price alone eliminates most.
 - **Static data bundled as JSON in repo:**

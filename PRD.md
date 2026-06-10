@@ -1,6 +1,6 @@
 # GasMath — Product Requirements Document
 
-**Version:** 1.1
+**Version:** 1.2
 **Owner:** Jonathan Goldner
 **Date:** June 10, 2026
 **Status:** Build-ready — all product decisions resolved; Q8/Q9 are build-time tasks with agreed approaches
@@ -44,7 +44,7 @@ Unlike price-listing apps (GasBuddy, Google Maps), GasMath computes the *true to
 1. **Zero user-data backend.** No accounts, no stored user data, no retention exposure. Vehicle and membership settings live in localStorage only.
 2. **Thin proxy is permitted.** A serverless edge function (Cloudflare Worker or equivalent) holds the Google API key. It stores no user data. **Caching constraint:** Google's Places policies restrict caching/storing Places content; only place IDs are exempt (storable indefinitely). Proxy design: persist place IDs per area; price data passes through with at most a short transient TTL pending Service Specific Terms review (§9, Q9).
 3. **Ship first, optimize iteratively.**
-4. **GitHub-native.** Repo under `jtgoldner`; hosting deploys directly from the repo (Cloudflare Pages or Vercel). Built with Claude Code, not Lovable.
+4. **GitHub-native.** Repo under `jtgoldner`; hosting deploys directly from the repo via **Vercel** (decided 2026-06-10 — owner has an existing account). Built with Claude Code, not Lovable.
 
 ---
 
@@ -115,7 +115,7 @@ effective_cost      = (gallons_needed × station_price) + (detour_gallons × sta
 |---|---|
 | Domain | **gasmath.app**, registered via Namecheap; DNS pointed at hosting provider |
 | SSL | **Required.** Note: `.app` is an HSTS-preloaded TLD — HTTPS is mandatory at the browser level. Hosting (Cloudflare Pages / Vercel) provides certs automatically. |
-| Hosting | Static frontend deployed from GitHub repo; serverless edge function for the price proxy/cache |
+| Hosting | **Vercel**: static frontend deployed from GitHub repo; serverless function in `/api` for the price proxy/cache. **Licensing note:** free Hobby tier is judged defensible only while the app is ad-free and costs users nothing. **Before any direct monetization, hosting must move to a paid Vercel plan or Cloudflare** — treat as a planned scaling maneuver. |
 | Repo | GitHub, under `jtgoldner` |
 | Storage | localStorage only (vehicle, club membership, optional cached results) |
 | PWA | Manifest + iOS meta tags + icon; installable to home screen |
