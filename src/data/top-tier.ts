@@ -1,9 +1,19 @@
 /**
  * Top Tier licensed retail brands (PRD Q8): bundled static list, matched
- * fuzzily against station names. Manual refresh ~yearly.
+ * fuzzily against station names.
  *
- * TODO(launch): verify this list against https://www.toptiergas.com/licensed-brands
- * before go-live — it was drafted from memory and brands change.
+ * Reconciled against https://www.toptiergas.com/gasoline-brands/ on 2026-06-11.
+ * Entries are canonical SHORT brand tokens (e.g. "Costco", not the registry's
+ * "Costco Wholesale"), because isTopTierBrand checks whether a station NAME
+ * contains a brand token — Google Places returns "Costco Gasoline", "Shell
+ * #1234", etc.
+ *
+ * Scope: the recognizable U.S. retail gasoline brands. The authoritative
+ * registry also lists many single-site regional/tribal licensees and
+ * international brands (YPF, COPEC, PUMA, Primax, …) that won't appear in
+ * typical U.S. Places results; reconcile those at the manual ~yearly refresh.
+ * Note: Kwik Trip, Casey's, GetGo, and Holiday are NOT on the registry as of
+ * this date despite common assumptions — do not re-add without checking.
  */
 export const TOP_TIER_BRANDS: string[] = [
   '76',
@@ -12,33 +22,35 @@ export const TOP_TIER_BRANDS: string[] = [
   'Amoco',
   'BP',
   'Beacon',
-  "Casey's",
+  'Breakaway',
   'Cenex',
   'Chevron',
   'CITGO',
+  'Co-op',
   'Conoco',
   'Costco',
   'CountryMark',
+  'Dash In',
   'Diamond Shamrock',
   'Exxon',
   'Express Mart',
-  'GetGo',
+  'Gulf',
   'Harmons',
   'Hele',
-  'Holiday',
+  'Holiday Oil',
   'Kirkland',
-  'Kwik Star',
-  'Kwik Trip',
   'Marathon',
   'Meijer',
-  'Metro Petro',
   'Mobil',
   'Ohana Fuels',
   'Phillips 66',
+  'QT',
   'QuikTrip',
+  'Road Ranger',
   "Rutter's",
   'Shamrock',
   'Shell',
+  'Simonson',
   'Sinclair',
   'Sunoco',
   'Texaco',

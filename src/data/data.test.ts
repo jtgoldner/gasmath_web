@@ -8,13 +8,16 @@ describe('Top Tier brand matching (PRD Q8: fuzzy on station names)', () => {
     expect(isTopTierBrand('Costco Gasoline')).toBe(true);
     expect(isTopTierBrand('QuikTrip #482')).toBe(true);
     expect(isTopTierBrand('Chevron - Downtown')).toBe(true);
-    expect(isTopTierBrand("Casey's General Store")).toBe(true);
+    expect(isTopTierBrand('Gulf Station')).toBe(true);
   });
 
   it('rejects unlisted and off-brand stations', () => {
     expect(isTopTierBrand("Joe's Discount Gas")).toBe(false);
     expect(isTopTierBrand('Speedway')).toBe(false);
     expect(isTopTierBrand("BJ's Gas")).toBe(false);
+    // Not on the toptiergas.com registry despite common assumptions (verified 2026-06-11).
+    expect(isTopTierBrand("Casey's General Store")).toBe(false);
+    expect(isTopTierBrand('Kwik Trip')).toBe(false);
   });
 
   it('does not match brand fragments inside other words', () => {
