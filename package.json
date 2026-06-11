@@ -9,12 +9,14 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:data": "node scripts/build-vehicles.mjs"
+    "build:data": "node scripts/build-vehicles.mjs",
+    "build:icons": "node scripts/build-icons.mjs"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",
     "@vercel/node": "^5.8.16",
     "happy-dom": "^20.10.2",
+    "sharp": "^0.35.1",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
     "vitest": "^4.1.8"

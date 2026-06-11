@@ -138,3 +138,13 @@ function showVerdict(): void {
 }
 
 settings ? showHome() : showOnboarding();
+
+// Register the service worker for installability + offline app shell.
+// Dev is skipped so the SW cache doesn't interfere with hot reload.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* SW is a progressive enhancement — ignore registration failures */
+    });
+  });
+}
