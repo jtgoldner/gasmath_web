@@ -143,7 +143,8 @@ describe('verdict screen', () => {
     expect(root.querySelectorAll('h2')).toHaveLength(1);
     expect(root.textContent).toContain('Mobil — Riverside');
     expect(root.textContent).toContain("You'll save");
-    expect(root.textContent).toContain('Google Maps');
+    // Google attribution present (hard rule 6): the "Powered by Google" logo.
+    expect(root.querySelector('.attribution-logo')!.getAttribute('alt')).toBe('Powered by Google');
     // Club stations must be entirely absent for non-members (hard rule 3).
     expect(root.textContent).not.toContain('Costco');
   });

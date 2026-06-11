@@ -52,7 +52,10 @@ export const COPY = {
     showAll: 'Show all stations',
     includeOlder: 'Include older prices',
     back: 'Back',
-    attribution: 'Station and price data: Google Maps',
+    // Google policy: Places data shown WITHOUT a map requires the official
+    // "Powered by Google" logo (not the "Google Maps" logo). This is the alt
+    // text / fallback for that logo image.
+    attributionAlt: 'Powered by Google',
   },
 
   settings: {

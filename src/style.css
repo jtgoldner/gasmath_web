@@ -223,11 +223,23 @@ input[type='checkbox'] {
   margin: 0;
 }
 
+/* Google attribution — visually distinct from app content (Google policy). */
 .attribution {
   margin-top: auto;
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.attribution-logo {
+  height: 18px;
+  width: auto;
+  display: block;
+}
+
+.attribution-fallback {
   font-size: 0.75rem;
   color: var(--muted);
-  text-align: center;
 }
 
 /* Hybrid-driver prompt: an attention nudge, not a primary action. */

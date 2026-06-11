@@ -59,10 +59,25 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
       </header>
       ${body}
       <!-- Legal requirement (hard rule 6, PRD §7): Google attribution must
-           accompany station/price data. TODO(M3): replace text with the
-           official "Google Maps" logo asset per Google's brand guidelines. -->
-      <p class="attribution">${c.attribution}</p>
+           accompany Places station/price data. Map-free display requires the
+           official "Powered by Google" logo; the asset lives in
+           public/attribution/ (see the README there). -->
+      <div class="attribution" data-attribution>
+        <img class="attribution-logo" data-act="attribution-logo"
+             src="/attribution/powered-by-google-on-white.png"
+             alt="${c.attributionAlt}" height="18">
+      </div>
     </main>`;
+
+  // Until the official PNG is dropped in, degrade gracefully to text rather
+  // than a broken-image icon.
+  root.querySelector('[data-act="attribution-logo"]')?.addEventListener('error', (e) => {
+    const img = e.currentTarget as HTMLImageElement;
+    const span = document.createElement('span');
+    span.className = 'attribution-fallback';
+    span.textContent = c.attributionAlt;
+    img.replaceWith(span);
+  });
 
   root.querySelector('[data-act="back"]')!.addEventListener('click', props.onBack);
   root.querySelector('[data-act="relax-top-tier"]')?.addEventListener('click', props.onRelaxTopTier);
