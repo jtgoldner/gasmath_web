@@ -5,6 +5,9 @@ export interface HomeProps {
   settings: AppSettings;
   onOpenSettings: () => void;
   onFind: (sliderFraction: number) => void;
+  /** Show the "Hybrid Vehicle? Read This First!" prompt (hidden for 24h after a view). */
+  showHybridNotice: boolean;
+  onOpenHybridInfo: () => void;
 }
 
 /**
@@ -23,6 +26,11 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
         <button class="ghost" data-act="settings" aria-label="${COPY.settings.title}">⚙</button>
       </header>
       <p class="muted">${year} ${make} ${model}</p>
+      ${
+        props.showHybridNotice
+          ? `<button class="notice-banner" data-act="hybrid">${COPY.home.hybridNotice}</button>`
+          : ''
+      }
       <section class="card gauge-card">
         <h2>${COPY.home.gaugeTitle}</h2>
         <div class="gauge">
@@ -48,6 +56,7 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
   gauge.addEventListener('input', updateGallons);
 
   root.querySelector('[data-act="settings"]')!.addEventListener('click', props.onOpenSettings);
+  root.querySelector('[data-act="hybrid"]')?.addEventListener('click', props.onOpenHybridInfo);
   root.querySelector('[data-act="find"]')!.addEventListener('click', () => {
     props.onFind(Number(gauge.value));
   });

@@ -2,7 +2,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mockProvider } from '../data/mock-provider';
 import { decide } from '../engine/engine';
-import { loadSettings, saveSettings, type AppSettings } from '../storage';
+import {
+  isHybridNoticeHidden,
+  loadSettings,
+  markHybridNoticeSeen,
+  saveSettings,
+  type AppSettings,
+} from '../storage';
 import { renderHome } from './home';
 import { renderOnboarding } from './onboarding';
 import { renderSettings } from './settings';
@@ -36,6 +42,13 @@ describe('storage', () => {
   it('round-trips settings through localStorage', () => {
     saveSettings(SETTINGS);
     expect(loadSettings()).toEqual(SETTINGS);
+  });
+
+  it('hides the hybrid notice for 24h after it is seen, then shows it again', () => {
+    const seenAt = new Date('2026-06-11T12:00:00Z');
+    markHybridNoticeSeen(seenAt);
+    expect(isHybridNoticeHidden(new Date(seenAt.getTime() + 23 * 3_600_000))).toBe(true);
+    expect(isHybridNoticeHidden(new Date(seenAt.getTime() + 25 * 3_600_000))).toBe(false);
   });
 });
 
@@ -71,10 +84,18 @@ describe('onboarding', () => {
 });
 
 describe('home / fuel gauge', () => {
+  const baseProps = {
+    settings: SETTINGS,
+    onOpenSettings: vi.fn(),
+    onFind: vi.fn(),
+    showHybridNotice: false,
+    onOpenHybridInfo: vi.fn(),
+  };
+
   it('converts the slider fraction to gallons and reports it on Find', () => {
     const root = mount();
     const onFind = vi.fn();
-    renderHome(root, { settings: SETTINGS, onOpenSettings: vi.fn(), onFind });
+    renderHome(root, { ...baseProps, onFind });
 
     // default 0.5 of a 15.8 gal tank ≈ 7.9 gallons
     expect(root.querySelector('[data-act="gallons"]')!.textContent).toContain('7.9');
@@ -86,6 +107,20 @@ describe('home / fuel gauge', () => {
 
     click(root, '[data-act="find"]');
     expect(onFind).toHaveBeenCalledWith(0.25);
+  });
+
+  it('shows the hybrid prompt only when enabled, and opens the info screen on tap', () => {
+    const hidden = mount();
+    renderHome(hidden, { ...baseProps, showHybridNotice: false });
+    expect(hidden.querySelector('[data-act="hybrid"]')).toBeNull();
+
+    const shown = mount();
+    const onOpenHybridInfo = vi.fn();
+    renderHome(shown, { ...baseProps, showHybridNotice: true, onOpenHybridInfo });
+    const banner = shown.querySelector<HTMLButtonElement>('[data-act="hybrid"]')!;
+    expect(banner.textContent).toContain('Hybrid Vehicle?');
+    banner.click();
+    expect(onOpenHybridInfo).toHaveBeenCalled();
   });
 });
 

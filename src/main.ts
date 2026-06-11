@@ -4,9 +4,16 @@ import { mockProvider } from './data/mock-provider';
 import type { LatLng, StationProvider } from './data/provider';
 import { decide, type Relaxations } from './engine/engine';
 import type { Candidate } from './engine/types';
-import { loadSettings, saveSettings, type AppSettings } from './storage';
+import {
+  isHybridNoticeHidden,
+  loadSettings,
+  markHybridNoticeSeen,
+  saveSettings,
+  type AppSettings,
+} from './storage';
 import { COPY } from './ui/copy';
 import { renderHome } from './ui/home';
+import { renderHybridInfo } from './ui/hybrid-info';
 import { renderOnboarding } from './ui/onboarding';
 import { renderSettings } from './ui/settings';
 import { renderVerdict } from './ui/verdict';
@@ -72,7 +79,14 @@ function showHome(): void {
     settings,
     onOpenSettings: showSettings,
     onFind: startSearch,
+    showHybridNotice: !isHybridNoticeHidden(),
+    onOpenHybridInfo: showHybridInfo,
   });
+}
+
+function showHybridInfo(): void {
+  markHybridNoticeSeen(); // starts the 24h hide window for the home prompt
+  renderHybridInfo(app, { onBack: showHome });
 }
 
 function showSettings(): void {

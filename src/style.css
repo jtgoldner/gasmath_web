@@ -229,3 +229,15 @@ input[type='checkbox'] {
   color: var(--muted);
   text-align: center;
 }
+
+/* Hybrid-driver prompt: an attention nudge, not a primary action. */
+.notice-banner {
+  width: 100%;
+  text-align: left;
+  background: #fff7e6;
+  color: var(--warn);
+  border: 1px solid #f3d9a8;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}

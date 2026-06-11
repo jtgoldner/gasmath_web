@@ -29,3 +29,18 @@ export function loadSettings(): AppSettings | null {
 export function saveSettings(settings: AppSettings): void {
   localStorage.setItem(KEY, JSON.stringify(settings));
 }
+
+const HYBRID_NOTICE_KEY = 'gasmath.hybridNoticeSeenAt.v1';
+const HYBRID_NOTICE_HIDE_MS = 24 * 3_600_000;
+
+/** Record that the user opened the hybrid notice, starting the 24h hide window. */
+export function markHybridNoticeSeen(now: Date = new Date()): void {
+  localStorage.setItem(HYBRID_NOTICE_KEY, String(now.getTime()));
+}
+
+/** True while the home-screen hybrid prompt should stay hidden (within 24h of last view). */
+export function isHybridNoticeHidden(now: Date = new Date()): boolean {
+  const seen = Number(localStorage.getItem(HYBRID_NOTICE_KEY));
+  if (!Number.isFinite(seen) || seen === 0) return false;
+  return now.getTime() - seen < HYBRID_NOTICE_HIDE_MS;
+}

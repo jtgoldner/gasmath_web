@@ -29,6 +29,13 @@ export const COPY = {
     gallons: (g: string) => `≈ ${g} gallons`,
     find: 'Find my station',
     locating: 'Checking nearby prices…',
+    hybridNotice: 'Hybrid Vehicle? Read This First!',
+  },
+
+  hybrid: {
+    heading: 'A note for hybrid drivers',
+    body: "We'll do our best to estimate your gas consumption and deliver a recommendation. But please know there's a much higher degree of error with hybrid vehicles, due to their more complex pattern of gasoline consumption.",
+    back: 'Return home',
   },
 
   verdict: {
