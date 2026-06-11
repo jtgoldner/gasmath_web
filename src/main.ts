@@ -1,4 +1,5 @@
 import './style.css';
+import { initAnalytics, track } from './analytics';
 import { liveProvider } from './data/live-provider';
 import { mockProvider } from './data/mock-provider';
 import type { LatLng, StationProvider } from './data/provider';
@@ -69,6 +70,7 @@ function showOnboarding(): void {
   renderOnboarding(app, (s) => {
     settings = s;
     saveSettings(s);
+    track('onboarding_complete');
     showHome();
   });
 }
@@ -103,6 +105,7 @@ function showSettings(): void {
 
 async function startSearch(fraction: number): Promise<void> {
   showLoading();
+  track('search_started');
   const location = await locate();
   try {
     const candidates = await provider.getCandidates(location, settings!, {});
@@ -116,6 +119,7 @@ async function startSearch(fraction: number): Promise<void> {
 async function acceptRelax(patch: Relaxations): Promise<void> {
   if (!settings || !session) return showHome();
   session.relax = { ...session.relax, ...patch };
+  track('relax_accepted', { type: patch.topTier ? 'top_tier' : 'staleness' });
   showLoading();
   try {
     session.candidates = await provider.getCandidates(session.location, settings, session.relax);
@@ -128,6 +132,14 @@ async function acceptRelax(patch: Relaxations): Promise<void> {
 function showVerdict(): void {
   if (!settings || !session) return showHome();
   const verdict = decide(session.candidates, settings, session.fraction, new Date(), session.relax);
+  // Aggregate, non-identifying: which outcome the user saw, and (when there's a
+  // verdict) whether the winner was already the nearest and the dollar savings.
+  track('verdict_shown', {
+    kind: verdict.kind,
+    ...(verdict.kind === 'verdict'
+      ? { winner_is_nearest: verdict.winnerIsNearest, savings: Math.round(verdict.savings) }
+      : {}),
+  });
   renderVerdict(app, {
     verdict,
     settings,
@@ -137,6 +149,7 @@ function showVerdict(): void {
   });
 }
 
+initAnalytics();
 settings ? showHome() : showOnboarding();
 
 // Register the service worker for installability + offline app shell.
