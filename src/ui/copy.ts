@@ -25,7 +25,9 @@ export const COPY = {
   },
 
   home: {
-    gaugeTitle: 'How much gas do you need?',
+    gaugeTitle: 'How much gas will you buy?',
+    gaugeEmpty: 'Just Topping Off',
+    gaugeFull: 'Full Tank',
     gallons: (g: string) => `≈ ${g} gallons`,
     find: 'Find my station',
     locating: 'Checking nearby prices…',

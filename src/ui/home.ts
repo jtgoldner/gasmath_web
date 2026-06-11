@@ -39,7 +39,7 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
           </div>
           <input data-act="gauge" type="range" min="0" max="1" step="0.005" value="0.5"
                  aria-label="${COPY.home.gaugeTitle}">
-          <div class="gauge-labels" aria-hidden="true"><span>E</span><span>F</span></div>
+          <div class="gauge-labels" aria-hidden="true"><span>${COPY.home.gaugeEmpty}</span><span>${COPY.home.gaugeFull}</span></div>
         </div>
         <p class="muted" data-act="gallons"></p>
       </section>

@@ -207,8 +207,19 @@ input[type='checkbox'] {
 .gauge-labels {
   display: flex;
   justify-content: space-between;
-  font-weight: 700;
-  padding: 0 4px;
+  gap: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 2px 2px 0;
+}
+
+.gauge-labels span {
+  white-space: nowrap;
+}
+
+.gauge-labels span:last-child {
+  text-align: right;
 }
 
 .dots {
