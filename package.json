@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build:data": "node scripts/build-vehicles.mjs",
-    "build:icons": "node scripts/build-icons.mjs"
+    "build:icons": "node scripts/build-icons.mjs",
+    "build:og": "node scripts/build-og.mjs"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",

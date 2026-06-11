@@ -1,7 +1,7 @@
 // Minimal hand-rolled service worker (no Workbox — keep deps minimal).
 // Caches only the static app shell. NEVER caches /api/* responses: Google's
 // Places policy forbids storing price data, and prices must stay fresh.
-const CACHE = 'gasmath-shell-v1';
+const CACHE = 'gasmath-shell-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 
