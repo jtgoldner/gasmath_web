@@ -19,7 +19,7 @@ export const COPY = {
     topTierLabel: 'Only show Top Tier certified stations',
     octaneTitle: 'Prefer high octane?',
     octaneHint: 'When on, GasMath compares premium prices instead of regular.',
-    octaneLabel: 'Price against premium fuel',
+    octaneLabel: 'My Car Needs Premium Fuel',
     next: 'Next',
     back: 'Back',
     finish: 'Start saving',
