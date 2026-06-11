@@ -31,6 +31,25 @@ body {
   flex-direction: column;
 }
 
+.legal-footer {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.legal-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.legal-footer a:hover {
+  text-decoration: underline;
+}
+
 .screen {
   flex: 1;
   display: flex;
