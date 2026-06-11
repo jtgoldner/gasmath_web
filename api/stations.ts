@@ -20,6 +20,7 @@ const FIELD_MASK =
 const CLUB_QUERIES: Record<string, string> = {
   costco: 'Costco Gasoline',
   bjs: "BJ's Gas",
+  samsclub: "Sam's Club Gas",
 };
 
 /** Midgrade and diesel are out of MVP scope; unknown grades are dropped. */

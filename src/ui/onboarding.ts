@@ -31,7 +31,8 @@ export function renderOnboarding(
       <h2>${o.clubsTitle}</h2>
       <p class="muted">${o.clubsHint}</p>
       <label class="row"><input type="checkbox" data-club="costco" ${draft.clubs.has('costco') ? 'checked' : ''}> ${o.costcoLabel}</label>
-      <label class="row"><input type="checkbox" data-club="bjs" ${draft.clubs.has('bjs') ? 'checked' : ''}> ${o.bjsLabel}</label>`,
+      <label class="row"><input type="checkbox" data-club="bjs" ${draft.clubs.has('bjs') ? 'checked' : ''}> ${o.bjsLabel}</label>
+      <label class="row"><input type="checkbox" data-club="samsclub" ${draft.clubs.has('samsclub') ? 'checked' : ''}> ${o.samsclubLabel}</label>`,
     topTier: () => `
       <h2>${o.topTierTitle}</h2>
       <p class="muted">${o.topTierHint}</p>

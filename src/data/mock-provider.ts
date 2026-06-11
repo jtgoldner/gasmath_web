@@ -29,6 +29,7 @@ const SPECS: MockSpec[] = [
   { name: 'Chevron — Oak Blvd', address: '1200 Oak Blvd, Springfield', brand: 'Chevron', topTier: true, distanceMiles: 2.4, regular: quote(3.45, 14), premium: quote(4.15, 14) },
   { name: 'Costco Gasoline', address: '75 Warehouse Way, Springfield', brand: 'Costco', club: 'costco', topTier: true, distanceMiles: 3.1, regular: quote(2.99), premium: quote(3.69) },
   { name: "BJ's Gas", address: '300 Member Ln, Springfield', brand: "BJ's", club: 'bjs', topTier: false, distanceMiles: 4.2, regular: quote(3.02) },
+  { name: "Sam's Club Fuel Center", address: '850 Warehouse Pkwy, Springfield', brand: "Sam's Club", club: 'samsclub', topTier: false, distanceMiles: 3.6, regular: quote(2.97) },
   { name: 'Sunoco — Route 9', address: '4501 Route 9, Springfield', brand: 'Sunoco', topTier: true, distanceMiles: 5.8, regular: quote(3.19) },
   { name: 'Speedway — Junction', address: '9 Junction Rd, Springfield', brand: 'Speedway', topTier: false, distanceMiles: 7.5, regular: quote(3.09) },
 ];

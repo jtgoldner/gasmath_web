@@ -34,6 +34,7 @@ export function renderSettings(root: HTMLElement, props: SettingsProps): void {
         <h2>${COPY.settings.clubs}</h2>
         <label class="row"><input type="checkbox" data-club="costco" ${s.clubMemberships.includes('costco') ? 'checked' : ''}> ${o.costcoLabel}</label>
         <label class="row"><input type="checkbox" data-club="bjs" ${s.clubMemberships.includes('bjs') ? 'checked' : ''}> ${o.bjsLabel}</label>
+        <label class="row"><input type="checkbox" data-club="samsclub" ${s.clubMemberships.includes('samsclub') ? 'checked' : ''}> ${o.samsclubLabel}</label>
       </section>
       <section class="card">
         <h2>${COPY.settings.preferences}</h2>

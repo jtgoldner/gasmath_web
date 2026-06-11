@@ -13,6 +13,7 @@ export const COPY = {
     clubsHint: "Only members can buy club gas, so GasMath only includes stations you can actually use.",
     costcoLabel: "I'm a Costco member",
     bjsLabel: "I'm a BJ's member",
+    samsclubLabel: "I'm a Sam's Club member",
     topTierTitle: 'Top Tier gas only?',
     topTierHint: 'Top Tier brands certify a higher detergent standard. Recommended on.',
     topTierLabel: 'Only show Top Tier certified stations',

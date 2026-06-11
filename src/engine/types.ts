@@ -2,7 +2,7 @@
 export type FuelGrade = 'regular' | 'premium';
 
 /** Warehouse club brands subject to the membership filter (CLAUDE.md hard rule 3). */
-export type ClubBrand = 'costco' | 'bjs';
+export type ClubBrand = 'costco' | 'bjs' | 'samsclub';
 
 export interface PriceQuote {
   /** USD per gallon. */

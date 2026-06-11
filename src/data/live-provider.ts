@@ -38,6 +38,7 @@ export function detectClub(name: string): ClubBrand | null {
   const n = name.toLowerCase();
   if (n.includes('costco')) return 'costco';
   if (/\bbj'?s\b/.test(n)) return 'bjs';
+  if (/\bsam'?s club\b/.test(n)) return 'samsclub';
   return null;
 }
 
