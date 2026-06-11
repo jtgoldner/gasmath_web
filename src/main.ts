@@ -13,6 +13,8 @@ import {
   type AppSettings,
 } from './storage';
 import { COPY } from './ui/copy';
+import { headerHtml } from './ui/header';
+import { pumpLoaderHtml } from './ui/loader';
 import { renderHome } from './ui/home';
 import { renderHybridInfo } from './ui/hybrid-info';
 import { renderOnboarding } from './ui/onboarding';
@@ -52,16 +54,23 @@ function locate(): Promise<LatLng> {
 }
 
 function showLoading(): void {
-  app.innerHTML = `<main class="screen center"><p class="muted">${COPY.home.locating}</p></main>`;
+  app.innerHTML = `
+    <main class="screen">
+      ${headerHtml()}
+      <div class="screen-center">${pumpLoaderHtml()}</div>
+    </main>`;
 }
 
 function showError(): void {
   app.innerHTML = `
-    <main class="screen center">
-      <section class="card">
-        <p>${COPY.errors.fetchFailed}</p>
-        <button class="primary" data-act="retry">${COPY.errors.retry}</button>
-      </section>
+    <main class="screen">
+      ${headerHtml()}
+      <div class="screen-center">
+        <section class="card">
+          <p>${COPY.errors.fetchFailed}</p>
+          <button class="primary" data-act="retry">${COPY.errors.retry}</button>
+        </section>
+      </div>
     </main>`;
   app.querySelector('[data-act="retry"]')!.addEventListener('click', showHome);
 }

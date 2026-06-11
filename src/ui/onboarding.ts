@@ -2,6 +2,7 @@ import type { ClubBrand } from '../engine/types';
 import type { AppSettings } from '../storage';
 import type { VehicleSpec } from '../data/vehicles';
 import { COPY } from './copy';
+import { headerHtml } from './header';
 import { vehiclePickerHtml, wireVehiclePicker } from './vehicle-picker';
 
 /** PRD §5.1 order: vehicle → warehouse clubs → Top Tier (ON) → octane (OFF). */
@@ -46,7 +47,7 @@ export function renderOnboarding(
     const last = step === STEPS.length - 1;
     root.innerHTML = `
       <main class="screen">
-        <header class="topbar"><h1>${COPY.appName}</h1></header>
+        ${headerHtml()}
         <p class="muted">${COPY.tagline}</p>
         <section class="card">${bodies[name]()}</section>
         <div class="dots">${STEPS.map((_, i) => `<span class="${i === step ? 'on' : ''}"></span>`).join('')}</div>

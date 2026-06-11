@@ -1,14 +1,16 @@
-/* Mobile-first: primary use case is phone-in-hand, about to drive. */
+/* Dark, premium decision-tool aesthetic. Mobile-first; primary use case is
+   phone-in-hand, about to drive. Single accent (amber) for CTAs + highlights. */
 
 :root {
-  --bg: #f4f6f8;
-  --card: #ffffff;
-  --ink: #1a1d21;
-  --muted: #5f6b7a;
-  --accent: #0a7d3b;
-  --accent-ink: #ffffff;
-  --line: #e2e6ea;
-  --warn: #b45309;
+  --bg: #0a0a0a;
+  --surface: #161616;
+  --surface-2: #1f1f22;
+  --ink: #f5f5f5;
+  --muted: #9a9aa2;
+  --accent: #f59e0b;
+  --accent-ink: #1a1206;
+  --line: #2a2a2e;
+  --danger: #f87171;
 }
 
 * {
@@ -31,43 +33,20 @@ body {
   flex-direction: column;
 }
 
-.legal-footer {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 16px;
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  font-size: 0.8rem;
-}
-
-.legal-footer a {
-  color: var(--muted);
-  text-decoration: none;
-}
-
-.legal-footer a:hover {
-  text-decoration: underline;
-}
-
 .screen {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px;
+  padding: 0 16px 16px;
 }
 
-.screen.center {
+/* Grows to fill the space under the header so loaders/errors center vertically. */
+.screen-center {
+  flex: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 40px;
 }
 
 h1 {
@@ -80,21 +59,59 @@ h2 {
   margin: 0 0 8px;
 }
 
+.screen-title {
+  font-size: 1.3rem;
+  margin: 4px 0 0;
+}
+
 .muted {
   color: var(--muted);
   margin: 0;
 }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.vehicle-line {
+  margin-top: -4px;
 }
 
+/* ---- Global header (persistent across screens) ---- */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.app-header-side {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.app-header-side-right {
+  justify-content: flex-end;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.brand-mark {
+  display: block;
+}
+
+.wordmark {
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+/* ---- Buttons ---- */
 button {
   font: inherit;
   cursor: pointer;
@@ -111,15 +128,49 @@ button.primary {
 }
 
 button.primary:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 button.ghost {
   background: transparent;
   color: var(--ink);
-  padding: 8px 12px;
+  border: 1px solid var(--line);
+  padding: 12px 18px;
   font-size: 1rem;
+}
+
+button.icon-btn {
+  background: transparent;
+  color: var(--ink);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  display: grid;
+  place-items: center;
+}
+
+button.icon-btn:hover {
+  background: var(--surface-2);
+}
+
+button.text-btn {
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  padding: 8px 4px;
+}
+
+/* ---- Cards & forms ---- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 label {
@@ -139,27 +190,33 @@ label.row {
   padding: 6px 0;
 }
 
-select,
-input[type='checkbox'] {
-  accent-color: var(--accent);
-}
-
 select {
+  appearance: none;
+  -webkit-appearance: none;
   font: inherit;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--card);
   color: var(--ink);
+  background-color: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 36px 12px 12px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239a9aa2' stroke-width='2' stroke-linecap='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
 }
 
 select:disabled {
   opacity: 0.5;
 }
 
+select option {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
 input[type='checkbox'] {
   width: 22px;
   height: 22px;
+  accent-color: var(--accent);
 }
 
 .picker {
@@ -169,7 +226,7 @@ input[type='checkbox'] {
 }
 
 .notice {
-  color: var(--warn);
+  color: var(--accent);
   margin: 0;
 }
 
@@ -177,7 +234,7 @@ input[type='checkbox'] {
   display: none;
 }
 
-/* Fuel gauge: E left, F right, hash marks at each quarter tank (PRD §5.2). */
+/* ---- Fuel gauge: E left, F right, quarter-tank hash marks (PRD §5.2) ---- */
 .gauge {
   display: flex;
   flex-direction: column;
@@ -198,10 +255,50 @@ input[type='checkbox'] {
 }
 
 .gauge input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  margin: 0;
-  accent-color: var(--accent);
   height: 36px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.gauge input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+.gauge input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 4px solid var(--bg);
+  margin-top: -10px;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.gauge input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+.gauge input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 4px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.gauge input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
 }
 
 .gauge-labels {
@@ -222,6 +319,7 @@ input[type='checkbox'] {
   text-align: right;
 }
 
+/* ---- Onboarding progress dots ---- */
 .dots {
   display: flex;
   justify-content: center;
@@ -246,10 +344,17 @@ input[type='checkbox'] {
   margin-top: auto;
 }
 
+/* ---- Verdict ---- */
 .savings {
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--accent);
+  margin: 0;
+}
+
+.station-address {
+  color: var(--muted);
+  font-size: 0.95rem;
   margin: 0;
 }
 
@@ -272,14 +377,90 @@ input[type='checkbox'] {
   color: var(--muted);
 }
 
-/* Hybrid-driver prompt: an attention nudge, not a primary action. */
+/* ---- Hybrid-driver prompt: amber attention nudge ---- */
 .notice-banner {
   width: 100%;
   text-align: left;
-  background: #fff7e6;
-  color: var(--warn);
-  border: 1px solid #f3d9a8;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(245, 158, 11, 0.35);
   padding: 12px 14px;
   font-size: 0.95rem;
   font-weight: 600;
+}
+
+/* ---- Animated gas-pump loader ---- */
+.pump-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.loader-text {
+  font-weight: 300;
+}
+
+.pump-svg {
+  animation: pump-pulse 1.8s ease-in-out infinite;
+}
+
+.pump-drip {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pump-drip 1.5s ease-in infinite;
+}
+
+@keyframes pump-pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes pump-drip {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(9px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pump-svg,
+  .pump-drip {
+    animation: none;
+  }
+}
+
+/* ---- Legal footer (rendered in index.html, outside #app) ---- */
+.legal-footer {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.legal-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.legal-footer a:hover {
+  text-decoration: underline;
 }

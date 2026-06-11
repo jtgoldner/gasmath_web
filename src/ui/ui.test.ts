@@ -142,6 +142,8 @@ describe('verdict screen', () => {
     // One verdict, never a list (hard rule 2): a single station heading.
     expect(root.querySelectorAll('h2')).toHaveLength(1);
     expect(root.textContent).toContain('Mobil — Riverside');
+    // Full street address shown below the station name.
+    expect(root.querySelector('.station-address')!.textContent).toContain('88 Riverside Dr');
     expect(root.textContent).toContain("You'll save");
     // Google attribution present (hard rule 6): the "Powered by Google" logo.
     expect(root.querySelector('.attribution-logo')!.getAttribute('alt')).toBe('Powered by Google');

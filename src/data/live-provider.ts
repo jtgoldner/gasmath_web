@@ -49,6 +49,7 @@ function toStation(w: WireStation): Station {
   return {
     placeId: w.placeId,
     name: w.name,
+    address: w.address,
     brand: w.name,
     club: detectClub(w.name),
     isTopTier: isTopTierBrand(w.name),

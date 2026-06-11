@@ -1,4 +1,5 @@
 import { COPY } from './copy';
+import { headerHtml } from './header';
 
 export interface HybridInfoProps {
   onBack: () => void;
@@ -12,7 +13,7 @@ export interface HybridInfoProps {
 export function renderHybridInfo(root: HTMLElement, props: HybridInfoProps): void {
   root.innerHTML = `
     <main class="screen">
-      <header class="topbar"><h1>${COPY.appName}</h1></header>
+      ${headerHtml()}
       <section class="card">
         <h2>${COPY.hybrid.heading}</h2>
         <p>${COPY.hybrid.body}</p>

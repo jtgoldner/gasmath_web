@@ -1,19 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GasMath">
-  <!-- Full-bleed background so the icon works as maskable (the platform masks
-       the square) and as an Apple touch icon (iOS rounds it). -->
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0a8f44"/>
-      <stop offset="1" stop-color="#076b32"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <!-- Fuel droplet (content kept within the central ~64% maskable safe zone). -->
-  <path d="M256 150 C300 250 348 292 348 332 A92 92 0 1 1 164 332 C164 292 212 250 256 150 Z"
-        fill="#ffffff"/>
-  <!-- Downward arrow = lower fuel cost. -->
-  <g fill="#076b32">
-    <rect x="246" y="288" width="20" height="40" rx="4"/>
-    <path d="M222 320 L290 320 L256 360 Z"/>
+  <!-- Full-bleed deep-navy background (works as maskable + Apple touch icon). -->
+  <rect width="512" height="512" fill="#0b1220"/>
+  <!-- Fuel droplet in amber. -->
+  <path d="M256 150 C300 250 350 300 350 336 A94 94 0 1 1 162 336 C162 300 212 250 256 150 Z"
+        fill="#f59e0b"/>
+  <!-- "+" on the left half, "−" on the right half: cost comparison. -->
+  <g fill="#0b1220">
+    <rect x="192" y="330" width="44" height="12" rx="3"/>
+    <rect x="208" y="314" width="12" height="44" rx="3"/>
+    <rect x="276" y="330" width="44" height="12" rx="3"/>
   </g>
 </svg>

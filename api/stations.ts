@@ -13,7 +13,8 @@ const SEARCH_RADIUS_M = 50_000;
 
 const NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby';
 const TEXT_URL = 'https://places.googleapis.com/v1/places:searchText';
-const FIELD_MASK = 'places.id,places.displayName,places.location,places.fuelOptions';
+const FIELD_MASK =
+  'places.id,places.displayName,places.formattedAddress,places.location,places.fuelOptions';
 
 /** Members-only supplemental club-brand queries (PRD §6). */
 const CLUB_QUERIES: Record<string, string> = {
@@ -35,6 +36,7 @@ export interface WirePrice {
 export interface WireStation {
   placeId: string;
   name: string;
+  address?: string;
   lat: number;
   lng: number;
   prices: Partial<Record<'regular' | 'premium', WirePrice>>;
@@ -56,6 +58,7 @@ function toWireStations(payload: any): WireStation[] {
     out.push({
       placeId: place.id,
       name: place.displayName?.text ?? 'Gas station',
+      address: place.formattedAddress ?? undefined,
       lat: place.location.latitude,
       lng: place.location.longitude,
       prices,

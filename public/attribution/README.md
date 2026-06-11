@@ -8,8 +8,11 @@ that render an actual Google map).
 Drop the official asset here so the verdict screen uses it instead of the text
 fallback:
 
-- `powered-by-google-on-white.png` — the light-background variant referenced by
-  [src/ui/verdict.ts](../../src/ui/verdict.ts).
+- `powered-by-google-on-non-white.png` — the **white logo for dark backgrounds**,
+  referenced by [src/ui/verdict.ts](../../src/ui/verdict.ts) (the app UI is dark).
+  Google provides both an on-white and an on-non-white variant; we use the
+  non-white one. Add `powered-by-google-on-white.png` too if a light surface ever
+  needs it.
 
 Get the official, unmodified logo from Google's attribution assets (do not
 recreate or restyle it):

@@ -1,5 +1,6 @@
 import type { AppSettings } from '../storage';
 import { COPY } from './copy';
+import { headerHtml, settingsButton } from './header';
 
 export interface HomeProps {
   settings: AppSettings;
@@ -21,11 +22,8 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
 
   root.innerHTML = `
     <main class="screen">
-      <header class="topbar">
-        <h1>${COPY.appName}</h1>
-        <button class="ghost" data-act="settings" aria-label="${COPY.settings.title}">⚙</button>
-      </header>
-      <p class="muted">${year} ${make} ${model}</p>
+      ${headerHtml({ right: settingsButton })}
+      <p class="muted vehicle-line">${year} ${make} ${model}</p>
       ${
         props.showHybridNotice
           ? `<button class="notice-banner" data-act="hybrid">${COPY.home.hybridNotice}</button>`

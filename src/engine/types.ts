@@ -13,6 +13,8 @@ export interface PriceQuote {
 export interface Station {
   placeId: string;
   name: string;
+  /** Full street address from Places (formattedAddress); shown on the verdict screen. */
+  address?: string;
   /** Normalized brand (e.g. "Shell"); drives Top Tier and club matching in the data layer. */
   brand: string;
   /** Set when the station belongs to a warehouse club; null otherwise. */

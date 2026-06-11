@@ -1,6 +1,7 @@
 import { selectedGrade, type Verdict } from '../engine/engine';
 import type { AppSettings } from '../storage';
 import { COPY, money } from './copy';
+import { backButton, headerHtml } from './header';
 
 export interface VerdictProps {
   verdict: Verdict;
@@ -23,10 +24,14 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
       const savingsLine = v.winnerIsNearest
         ? `<p class="savings">${c.affirm}</p>`
         : `<p class="savings">${c.savings(v.winner.station.name, money(v.savings))}</p>`;
+      const address = v.winner.station.address
+        ? `<p class="station-address">${v.winner.station.address}</p>`
+        : '';
       body = `
         <section class="card">
           <p class="muted">${c.heading}</p>
           <h2>${v.winner.station.name}</h2>
+          ${address}
           <p>${c.perGallon(money(price), grade)} · ${c.distance(v.winner.distanceMiles.toFixed(1))}</p>
           ${savingsLine}
           <p class="muted">${c.fillCost(money(v.winnerCost))}</p>
@@ -54,9 +59,7 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
 
   root.innerHTML = `
     <main class="screen">
-      <header class="topbar">
-        <button class="ghost" data-act="back">← ${c.back}</button>
-      </header>
+      ${headerHtml({ left: backButton })}
       ${body}
       <!-- Legal requirement (hard rule 6, PRD §7): Google attribution must
            accompany Places station/price data. Map-free display requires the
@@ -64,7 +67,7 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
            public/attribution/ (see the README there). -->
       <div class="attribution" data-attribution>
         <img class="attribution-logo" data-act="attribution-logo"
-             src="/attribution/powered-by-google-on-white.png"
+             src="/attribution/powered-by-google-on-non-white.png"
              alt="${c.attributionAlt}" height="18">
       </div>
     </main>`;

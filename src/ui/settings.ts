@@ -1,6 +1,7 @@
 import type { ClubBrand } from '../engine/types';
 import type { AppSettings } from '../storage';
 import { COPY } from './copy';
+import { doneButton, headerHtml } from './header';
 import { vehiclePickerHtml, wireVehiclePicker } from './vehicle-picker';
 
 export interface SettingsProps {
@@ -23,10 +24,8 @@ export function renderSettings(root: HTMLElement, props: SettingsProps): void {
 
   root.innerHTML = `
     <main class="screen">
-      <header class="topbar">
-        <h1>${COPY.settings.title}</h1>
-        <button class="ghost" data-act="back">${COPY.settings.done}</button>
-      </header>
+      ${headerHtml({ right: doneButton })}
+      <h2 class="screen-title">${COPY.settings.title}</h2>
       <section class="card">
         <h2>${COPY.settings.vehicle}</h2>
         ${vehiclePickerHtml()}
