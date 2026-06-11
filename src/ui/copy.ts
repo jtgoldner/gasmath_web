@@ -7,7 +7,7 @@ export const COPY = {
 
   onboarding: {
     vehicleTitle: 'What do you drive?',
-    vehicleHint: 'GasMath uses your EPA mileage and tank size to do the math. Stored on your phone only — no account, ever.',
+    vehicleHint: 'GasMath uses your EPA mileage and tank size to do the math. Stored on your device only — no account, ever.',
     dieselNotice: 'Diesel support is coming soon. GasMath prices gasoline only for now.',
     clubsTitle: 'Warehouse club gas',
     clubsHint: "Only members can buy club gas, so GasMath only includes stations you can actually use.",
