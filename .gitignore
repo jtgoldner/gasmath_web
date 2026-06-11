@@ -4,3 +4,8 @@ dist/
 .env
 .env.*
 *.local
+
+# Raw EPA bulk dataset (~22 MB) — regenerate src/data/vehicles.json with
+# `npm run build:data`. See README. The curated tank table and the generated
+# vehicles.json ARE committed.
+data/epa-vehicles.csv

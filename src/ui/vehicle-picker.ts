@@ -1,4 +1,4 @@
-import { findVehicle, makesFor, modelsFor, years, type VehicleSpec } from '../data/vehicles';
+import { vehicleLookups, type VehicleLookups, type VehicleSpec } from '../data/vehicles';
 import type { VehicleIdentity } from '../storage';
 import { COPY } from './copy';
 
@@ -28,6 +28,7 @@ export function wireVehiclePicker(
   root: HTMLElement,
   onPick: (vehicle: VehicleSpec | null) => void,
   initial?: VehicleIdentity,
+  lookups: VehicleLookups = vehicleLookups,
 ): void {
   const yearSel = root.querySelector<HTMLSelectElement>('[data-picker="year"]')!;
   const makeSel = root.querySelector<HTMLSelectElement>('[data-picker="make"]')!;
@@ -44,7 +45,7 @@ export function wireVehiclePicker(
   function emit() {
     dieselNotice.classList.add('hidden');
     if (!yearSel.value || !makeSel.value || !modelSel.value) return onPick(null);
-    const vehicle = findVehicle(Number(yearSel.value), makeSel.value, modelSel.value);
+    const vehicle = lookups.findVehicle(Number(yearSel.value), makeSel.value, modelSel.value);
     if (!vehicle) return onPick(null);
     if (vehicle.fuelType === 'diesel') {
       dieselNotice.classList.remove('hidden');
@@ -53,24 +54,24 @@ export function wireVehiclePicker(
     onPick(vehicle);
   }
 
-  fill(yearSel, years(), 'Year');
+  fill(yearSel, lookups.years(), 'Year');
 
   yearSel.addEventListener('change', () => {
-    fill(makeSel, makesFor(Number(yearSel.value)), 'Make');
+    fill(makeSel, lookups.makesFor(Number(yearSel.value)), 'Make');
     fill(modelSel, [], 'Model');
     emit();
   });
   makeSel.addEventListener('change', () => {
-    fill(modelSel, modelsFor(Number(yearSel.value), makeSel.value), 'Model');
+    fill(modelSel, lookups.modelsFor(Number(yearSel.value), makeSel.value), 'Model');
     emit();
   });
   modelSel.addEventListener('change', emit);
 
   if (initial) {
     yearSel.value = String(initial.year);
-    fill(makeSel, makesFor(initial.year), 'Make');
+    fill(makeSel, lookups.makesFor(initial.year), 'Make');
     makeSel.value = initial.make;
-    fill(modelSel, modelsFor(initial.year, initial.make), 'Model');
+    fill(modelSel, lookups.modelsFor(initial.year, initial.make), 'Model');
     modelSel.value = initial.model;
     emit();
   }

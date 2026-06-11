@@ -1,0 +1,63 @@
+# Curated fuel-tank capacities (US gallons), keyed to EPA `baseModel` strings.
+# Merged with EPA combined-MPG data by scripts/build-vehicles.mjs -> src/data/vehicles.json.
+#
+# EPA does not publish tank capacity, so this table is the coverage driver:
+# only (make, baseModel) pairs listed here become selectable vehicles. Add a
+# make/model by appending a row — run `npm run build:data` and check the
+# "unmatched" report to confirm the baseModel string matches EPA's.
+#
+# Values are curated estimates for the common gasoline trim of the current
+# generation; tank size can vary by drivetrain (FWD vs AWD) and trim, so spot-
+# check against the verdict-accuracy checks before launch (PRD §10). One value
+# per nameplate is a deliberate MVP simplification.
+#
+# make,baseModel,tankGal
+Toyota,Camry,15.8
+Toyota,Corolla,13.2
+Toyota,Corolla Cross,12.4
+Toyota,RAV4,14.5
+Toyota,Highlander,17.9
+Toyota,Grand Highlander,17.9
+Toyota,4Runner,23.0
+Toyota,Tacoma,21.1
+Toyota,Tundra,32.2
+Toyota,Sequoia,22.5
+Toyota,Sienna,18.0
+Toyota,Prius,11.3
+Toyota,Avalon,14.5
+Toyota,Venza,14.5
+Toyota,Crown,14.5
+Toyota,Land Cruiser,17.9
+Honda,Civic,12.4
+Honda,Accord,14.7
+Honda,CR-V,14.0
+Honda,Pilot,18.5
+Honda,Odyssey,19.5
+Honda,HR-V,14.0
+Honda,Passport,19.5
+Honda,Ridgeline,19.5
+Honda,Insight,10.6
+Honda,Fit,10.6
+Ford,F150,26.0
+Ford,Escape,14.7
+Ford,Explorer,17.9
+Ford,Bronco Sport,16.0
+Ford,Bronco,16.9
+Ford,Maverick,13.8
+Ford,Ranger,18.0
+Ford,Edge,18.5
+Ford,Expedition,23.2
+Ford,Mustang,16.0
+Ford,Fusion,16.5
+Chevrolet,Silverado,24.0
+Chevrolet,Equinox,14.9
+Chevrolet,Malibu,15.8
+Chevrolet,Tahoe,24.0
+Chevrolet,Suburban,28.0
+Chevrolet,Traverse,17.7
+Chevrolet,Trax,14.0
+Chevrolet,Trailblazer,13.2
+Chevrolet,Colorado,21.0
+Chevrolet,Blazer,19.4
+Chevrolet,Camaro,19.0
+Chevrolet,Corvette,18.5
