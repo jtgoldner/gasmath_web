@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { SEARCH_RADIUS_M } from '../src/config';
+
+// Mirrors SEARCH_RADIUS_M in src/config.ts — inlined because Vercel bundles
+// each function in isolation and imports from outside api/ fail at runtime.
+const SEARCH_RADIUS_M = 50_000;
 
 /**
  * Server-side proxy for Google Places API (New). The API key lives only in

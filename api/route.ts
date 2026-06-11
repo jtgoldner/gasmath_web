@@ -1,5 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { MAX_ROUTING_CANDIDATES } from '../src/config';
+
+// Mirrors MAX_ROUTING_CANDIDATES in src/config.ts — inlined because Vercel
+// bundles each function in isolation and imports from outside api/ fail at
+// runtime.
+const MAX_ROUTING_CANDIDATES = 10;
 
 /**
  * Server-side proxy for the OpenRouteService matrix API (real driving
