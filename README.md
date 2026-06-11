@@ -21,8 +21,16 @@ browser's localStorage.
 |---|---|---|
 | 1 | Project scaffold + fully tested decision engine | ✅ Done |
 | 2 | UI (onboarding, fuel gauge, verdict, settings) against a mock provider | ✅ Done |
-| 3 | Live data: Google Places proxy, OpenRouteService routing, vehicle + Top Tier datasets | ⏳ Next |
-| 4 | Launch: PWA, GA4, attribution assets, legal pages, gasmath.app DNS | ⏳ |
+| 3 | Live data: Google Places proxy, OpenRouteService routing, vehicle + Top Tier datasets | ✅ Done |
+| 4 | Launch: PWA, GA4, legal pages built; pending account/config items below | 🔄 In progress |
+
+### Launch follow-ups (require accounts / decisions, not code)
+
+- [ ] Drop the official "Powered by Google" logo in `public/attribution/` (see its README)
+- [ ] Set `VITE_GA4_ID` in Vercel; verify the property in Google Search Console
+- [ ] Harden the Google key: restrict to Places API (New) + set a daily quota cap
+- [ ] Fill legal placeholders (governing law, contact inbox) and get counsel review
+- [ ] Point gasmath.app DNS at Vercel
 
 ## Development
 
