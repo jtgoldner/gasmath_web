@@ -18,7 +18,7 @@ GasMath (https://gasmath.app) answers one question: **which gas station is actua
 3. **Club filter is absolute.** Non-members never see warehouse club stations (Costco, BJ's) — not grayed out, not "FYI" — absent.
 4. **Never recommend on a guessed price.** Stations missing a price for the selected grade, or with prices older than the staleness threshold, are excluded.
 5. **Do not change existing functionality when adding features.** When in doubt, ask.
-6. **Google attribution is a legal requirement, not a style choice.** "Google Maps" logo must appear with station/price data (see PRD §7). Don't remove it during redesigns.
+6. **Google attribution is a legal requirement, not a style choice.** The "Powered by Google" logo must appear with station/price data — that's the attribution Google requires for Places data shown without a map (the "Google Maps" logo only applies when an actual map is rendered). See PRD §7. Don't remove it during redesigns.
 7. **Secrets never in the repo or client bundle.** The Google API key lives only in the edge function's environment variables.
 
 ## Architecture
@@ -60,7 +60,7 @@ effective_cost = (gallons_needed + detour_gallons) × station_price
 - Owner writes final user-facing copy; use placeholder copy marked `// COPY: draft` and keep it easy to find.
 - Mobile-first UI: primary use case is phone-in-hand, about to drive. Fuel slider: E left, F right, quarter-tank hash marks, continuous values.
 - Onboarding order: vehicle → warehouse clubs → Top Tier (default ON) → high octane (default OFF). All editable in Settings.
-- Launch checklist items easy to forget: Terms of Use + Privacy Policy pages (Google policy requirement), PWA manifest + icons, GA4, Google Maps logo attribution, API key referrer restriction + quota cap.
+- Launch checklist items easy to forget: Terms of Use + Privacy Policy pages (Google policy requirement), PWA manifest + icons, GA4, "Powered by Google" logo attribution, API key restriction + quota cap.
 
 ## What NOT to build (MVP non-goals)
 

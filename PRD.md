@@ -1,8 +1,8 @@
 # GasMath — Product Requirements Document
 
-**Version:** 1.2
+**Version:** 1.3
 **Owner:** Jonathan Goldner
-**Date:** June 10, 2026
+**Date:** June 11, 2026
 **Status:** Build-ready — all product decisions resolved; Q8/Q9 are build-time tasks with agreed approaches
 
 ---
@@ -52,7 +52,7 @@ Unlike price-listing apps (GasBuddy, Google Maps), GasMath computes the *true to
 
 | Dependency | Purpose | Notes |
 |---|---|---|
-| Google Places API (New) — Nearby Search + `fuelOptions` field | Station discovery + live station-level fuel prices by grade | Enterprise+Atmosphere SKU (~$25/1K calls; 1,000 free Enterprise events/mo). Must be called via proxy with referrer restriction + daily quota caps. **ToS verified:** map-free display permitted with Google Maps logo attribution; place IDs storable indefinitely; broad caching of other content restricted (see §9, Q9). |
+| Google Places API (New) — Nearby Search + `fuelOptions` field | Station discovery + live station-level fuel prices by grade | Enterprise+Atmosphere SKU (~$25/1K calls; 1,000 free Enterprise events/mo). Must be called via proxy with referrer restriction + daily quota caps. **ToS verified:** map-free display permitted with a "Powered by Google" logo attribution (the required attribution for Places data shown without a map); place IDs storable indefinitely; broad caching of other content restricted (see §9, Q9). |
 | OpenRouteService | Driving distance/time from user location to each candidate station | Free tier. Real routing data is core to the value prop — no user-entered distances. |
 | Vehicle MPG dataset (e.g., EPA fueleconomy.gov data) | Map year/make/model → combined MPG and tank capacity | Can be bundled as static JSON; no runtime API dependency required. |
 | Browser Geolocation API | Precise user location | Permission requested post-onboarding, at point of need. |
@@ -120,7 +120,7 @@ effective_cost      = (gallons_needed × station_price) + (detour_gallons × sta
 | Storage | localStorage only (vehicle, club membership, optional cached results) |
 | PWA | Manifest + iOS meta tags + icon; installable to home screen |
 | Analytics | Google Analytics 4 + Search Console (traction data supports acquisition narrative) |
-| Attribution | "Google Maps" logo displayed with station/price data on verdict screen (map-free display permitted); follow Google style guidelines; visually distinguish Google content. If results are ever shown on a map, it must be a Google Map. |
+| Attribution | "Powered by Google" logo displayed with station/price data on the verdict screen — this is the attribution Google requires for Places data shown *without* a map. Follow Google's style guidelines (use the logo unaltered); visually distinguish Google content. The separate "Google Maps" logo applies only if results are ever shown on an actual map, which must then be a Google Map. |
 | Legal pages | Publicly accessible Terms of Use + Privacy Policy incorporating Google's ToS and Privacy Policy (required by Places API policies; also appropriate given location permission) |
 | Cost controls | API key referrer-restricted, daily quota cap; place-ID persistence per area; no long-lived shared price cache (per Places caching policy — see §9, Q9) |
 
@@ -143,7 +143,7 @@ effective_cost      = (gallons_needed × station_price) + (detour_gallons × sta
 3. ~~Search radius~~ — **Resolved:** fixed 50 km bound (the API maximum), ranked by distance, top 20 results. Station density is inferred implicitly — the 20-nearest set is naturally tight in metros and wide in rural areas. No user-facing radius control; no density profiling. Supplemental club-brand query for members (see §6).
 4. ~~No-data fallback~~ — **Resolved:** progressive relaxation. If filters empty the candidate set, offer to relax in order: Top Tier filter first ("No Top Tier stations nearby with current prices — show all stations?"), then staleness. Never dead-end without offering an option. Club filter is never relaxed (hard rule).
 5. ~~Price staleness threshold~~ — **Resolved:** 12 hours; single config constant for easy adjustment.
-6. ~~Google ToS~~ — **Resolved:** no map required on verdict screen; "Google Maps" logo attribution required next to Places data; if data is ever shown on a map it must be a Google Map; app must publish Terms of Use + Privacy Policy incorporating Google's.
+6. ~~Google ToS~~ — **Resolved:** no map required on verdict screen; a "Powered by Google" logo attribution is required next to Places data (this is the map-free attribution — the "Google Maps" logo only applies when an actual map is rendered); if data is ever shown on a map it must be a Google Map; app must publish Terms of Use + Privacy Policy incorporating Google's.
 7. ~~Verdict screen content~~ — **Resolved:** show savings: "You'll save $X by going to this station." **$X baseline confirmed:** savings vs. filling up at the nearest eligible station (the user's autopilot default). If the winner *is* the nearest station, show affirming copy instead (e.g., "Good news — your closest station is also your cheapest.").
 8. **Top Tier data source** *(build-time task, approach agreed)*: bundle a static brand list from toptiergas.com as JSON; match on station brand/name with fuzzy handling (e.g., "Costco Gasoline" vs "Costco"). Refresh manually ~yearly.
 9. **Caching strategy vs. Places policy** *(build-time task, approach agreed)*: review GMP Service Specific Terms before finalizing proxy. Default design: persist place IDs only; price data pass-through or short transient TTL; per-session client caching; referrer restriction + daily quota caps.
