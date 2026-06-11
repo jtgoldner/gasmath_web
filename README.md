@@ -56,7 +56,10 @@ npm run build:data
 ```
 
 Coverage is driven by `data/tank-capacity.csv`; adding a make/model is one row.
-Current seed: popular Toyota, Honda, Ford, and Chevrolet nameplates.
+Current coverage: ~1,800 vehicles across 24 makes (Acura, Buick, Cadillac,
+Chevrolet, Chrysler, Dodge, Ford, GMC, Genesis, Honda, Hyundai, Infiniti, Jeep,
+Kia, Lexus, Lincoln, Mazda, Mitsubishi, Nissan, Ram, Subaru, Toyota,
+Volkswagen, Volvo). Tank values are curated estimates pending spot-check.
 
 ## Documents
 
