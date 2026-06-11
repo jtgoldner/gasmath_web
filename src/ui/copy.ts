@@ -55,6 +55,11 @@ export const COPY = {
     preferences: 'Fuel preferences',
     done: 'Done',
   },
+
+  errors: {
+    fetchFailed: "Something went wrong getting prices. Check your connection and try again.",
+    retry: 'Try again',
+  },
 } as const;
 
 export function money(amount: number): string {

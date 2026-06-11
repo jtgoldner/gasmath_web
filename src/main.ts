@@ -1,6 +1,7 @@
 import './style.css';
+import { liveProvider } from './data/live-provider';
 import { mockProvider } from './data/mock-provider';
-import type { LatLng } from './data/provider';
+import type { LatLng, StationProvider } from './data/provider';
 import { decide, type Relaxations } from './engine/engine';
 import type { Candidate } from './engine/types';
 import { loadSettings, saveSettings, type AppSettings } from './storage';
@@ -12,16 +13,23 @@ import { renderVerdict } from './ui/verdict';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
-// Swapped for the live provider (Places proxy + ORS) in Milestone 3.
-const provider = mockProvider;
+// Dev uses the mock (no keys needed); set VITE_LIVE=1 with `vercel dev` to
+// exercise the live proxies locally. Production always uses live data.
+const provider: StationProvider =
+  import.meta.env.DEV && import.meta.env.VITE_LIVE !== '1' ? mockProvider : liveProvider;
 
 let settings: AppSettings | null = loadSettings();
 
-/** One search = one candidate set; relaxations the user accepts re-decide over it. */
-let session: { candidates: Candidate[]; fraction: number; relax: Relaxations } | null = null;
+/** One search session; accepted relaxations re-fetch so new candidates get real routing. */
+let session: {
+  location: LatLng;
+  candidates: Candidate[];
+  fraction: number;
+  relax: Relaxations;
+} | null = null;
 
-// TODO(M3): the live flow must surface a denied location permission instead of
-// silently falling back — the mock provider ignores location entirely.
+// TODO(M3): surface a denied location permission in the UI instead of silently
+// falling back — with live data a wrong location means wrong stations.
 const FALLBACK_LOCATION: LatLng = { lat: 40.7128, lng: -74.006 };
 
 function locate(): Promise<LatLng> {
@@ -33,6 +41,21 @@ function locate(): Promise<LatLng> {
       { timeout: 8_000 },
     );
   });
+}
+
+function showLoading(): void {
+  app.innerHTML = `<main class="screen center"><p class="muted">${COPY.home.locating}</p></main>`;
+}
+
+function showError(): void {
+  app.innerHTML = `
+    <main class="screen center">
+      <section class="card">
+        <p>${COPY.errors.fetchFailed}</p>
+        <button class="primary" data-act="retry">${COPY.errors.retry}</button>
+      </section>
+    </main>`;
+  app.querySelector('[data-act="retry"]')!.addEventListener('click', showHome);
 }
 
 function showOnboarding(): void {
@@ -65,11 +88,27 @@ function showSettings(): void {
 }
 
 async function startSearch(fraction: number): Promise<void> {
-  app.innerHTML = `<main class="screen center"><p class="muted">${COPY.home.locating}</p></main>`;
+  showLoading();
   const location = await locate();
-  const candidates = await provider.getCandidates(location, settings!);
-  session = { candidates, fraction, relax: {} };
-  showVerdict();
+  try {
+    const candidates = await provider.getCandidates(location, settings!, {});
+    session = { location, candidates, fraction, relax: {} };
+    showVerdict();
+  } catch {
+    showError();
+  }
+}
+
+async function acceptRelax(patch: Relaxations): Promise<void> {
+  if (!settings || !session) return showHome();
+  session.relax = { ...session.relax, ...patch };
+  showLoading();
+  try {
+    session.candidates = await provider.getCandidates(session.location, settings, session.relax);
+    showVerdict();
+  } catch {
+    showError();
+  }
 }
 
 function showVerdict(): void {
@@ -78,14 +117,8 @@ function showVerdict(): void {
   renderVerdict(app, {
     verdict,
     settings,
-    onRelaxTopTier: () => {
-      session!.relax = { ...session!.relax, topTier: true };
-      showVerdict();
-    },
-    onRelaxStaleness: () => {
-      session!.relax = { ...session!.relax, staleness: true };
-      showVerdict();
-    },
+    onRelaxTopTier: () => void acceptRelax({ topTier: true }),
+    onRelaxStaleness: () => void acceptRelax({ staleness: true }),
     onBack: showHome,
   });
 }

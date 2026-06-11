@@ -1,3 +1,4 @@
+import type { Relaxations } from '../engine/engine';
 import type { Candidate } from '../engine/types';
 import type { AppSettings } from '../storage';
 
@@ -7,11 +8,12 @@ export interface LatLng {
 }
 
 /**
- * Station data source. Milestone 2 ships the deterministic mock; Milestone 3
- * adds the live provider (Places proxy + OpenRouteService routing) behind this
- * same interface, including the members-only supplemental club-brand query.
- * Providers return raw candidates — eligibility filtering belongs to the engine.
+ * Station data source: the deterministic mock for development, the live
+ * provider (Places proxy + OpenRouteService routing) in production.
+ * Providers return raw candidates — eligibility filtering belongs to the
+ * engine — but the live provider uses `relax` to decide which candidates are
+ * worth real routing, so accepting a relaxation offer must re-fetch.
  */
 export interface StationProvider {
-  getCandidates(location: LatLng, settings: AppSettings): Promise<Candidate[]>;
+  getCandidates(location: LatLng, settings: AppSettings, relax?: Relaxations): Promise<Candidate[]>;
 }
