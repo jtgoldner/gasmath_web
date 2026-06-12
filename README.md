@@ -27,9 +27,10 @@ browser's localStorage.
 ### Launch follow-ups (require accounts / decisions, not code)
 
 - [ ] Drop the official "Powered by Google" logo in `public/attribution/` (see its README)
-- [ ] Set `VITE_GA4_ID` in Vercel; verify the property in Google Search Console
+- [x] GA4 implemented (measurement ID `G-B2KBG3JLYP` baked in; verify in GA4 Realtime after deploy)
+- [ ] Verify the domain in Google Search Console
 - [ ] Harden the Google key: restrict to Places API (New) + set a daily quota cap
-- [ ] Fill legal placeholders (governing law, contact inbox) and get counsel review
+- [x] Legal pages drafted: NY governing law, contact@gasmath.app (self-serve; not lawyer-reviewed)
 - [ ] Point gasmath.app DNS at Vercel
 
 ## Development

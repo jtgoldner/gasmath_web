@@ -1,6 +1,7 @@
-// Google Analytics 4 (PRD §7). Loads only in production when VITE_GA4_ID is set
-// (a GA4 measurement ID like "G-XXXXXXX" — public, not a secret). No-ops
-// otherwise, so dev and unconfigured builds send nothing.
+// Google Analytics 4 (PRD §7). Loads in production and sends events to the
+// project's GA4 property. The measurement ID is public (it ships in the client
+// bundle by design), so it's baked in as the default; override per environment
+// with VITE_GA4_ID, or set VITE_GA4_ID="" to disable analytics.
 //
 // Privacy (see public/privacy.html): events carry only aggregate, non-identifying
 // fields. Never pass location, vehicle identity, or anything user-specific here.
@@ -14,15 +15,18 @@ declare global {
 
 type EventParams = Record<string, string | number | boolean>;
 
-const GA_ID = import.meta.env.VITE_GA4_ID as string | undefined;
-let ready = false;
+export const GA_MEASUREMENT_ID =
+  (import.meta.env.VITE_GA4_ID as string | undefined) ?? 'G-B2KBG3JLYP';
 
-export function initAnalytics(): void {
-  if (ready || !GA_ID || !import.meta.env.PROD) return;
+let loaded = false;
+
+/** Inject gtag.js for `id` and start the data layer. Idempotent. Exposed for tests. */
+export function loadAnalytics(id: string): void {
+  if (loaded || !id) return;
 
   const script = document.createElement('script');
   script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
   document.head.appendChild(script);
 
   window.dataLayer = window.dataLayer || [];
@@ -32,11 +36,17 @@ export function initAnalytics(): void {
     window.dataLayer!.push(arguments);
   };
   window.gtag('js', new Date());
-  window.gtag('config', GA_ID);
-  ready = true;
+  window.gtag('config', id);
+  loaded = true;
 }
 
+/** Startup hook: load analytics only in production builds. */
+export function initAnalytics(): void {
+  if (import.meta.env.PROD) loadAnalytics(GA_MEASUREMENT_ID);
+}
+
+/** Record an aggregate, non-identifying event (no-op until analytics loads). */
 export function track(event: string, params: EventParams = {}): void {
-  if (!ready) return;
+  if (!loaded) return;
   window.gtag?.('event', event, params);
 }
