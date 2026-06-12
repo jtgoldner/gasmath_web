@@ -39,18 +39,21 @@
     <h2>What we store on your device</h2>
     <p>
       Your preferences — your vehicle, warehouse-club membership, Top Tier
-      preference, and fuel-grade choice — are saved only in your browser's local
-      storage, on your device. They are never transmitted to or stored on our
-      servers, and we cannot see them. Clearing your browser data removes them.
+      preference, and fuel-grade choice — plus minor interface state such as which
+      tips you've dismissed, are saved only in your browser's local storage, on
+      your device. They are never transmitted to or stored on our servers, and we
+      cannot see them. Clearing your browser data removes them.
     </p>
 
     <h2>Location</h2>
     <p>
       When you ask GasMath to find a station, your browser requests your location
-      with your permission. Your coordinates are sent to our serverless function
-      only to query nearby gas stations and driving distances for that request.
-      We do not store your location, and we do not associate it with any identity.
-      You can decline or revoke the location permission in your browser at any time.
+      with your permission. Your coordinates are sent to our serverless function,
+      which forwards them to Google (to find nearby stations and prices) and to
+      OpenRouteService (to calculate driving distance from you) for that single
+      request. We do not store your location or associate it with any identity, and
+      our function keeps no log of it. You can decline or revoke the location
+      permission in your browser at any time.
     </p>
 
     <h2>Third-party services</h2>
@@ -63,15 +66,26 @@
         <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.
       </li>
       <li>
-        <strong>OpenRouteService</strong> for driving-distance calculations.
+        <strong>OpenRouteService</strong> for driving-distance calculations; your
+        coordinates and the candidate station locations are sent to it to compute
+        distances.
       </li>
       <li>
         <strong>Google Analytics (GA4)</strong>, if enabled, to understand
-        aggregate, anonymous usage (for example, how many people reach a verdict).
-        We do not use it to identify you. See Google's
+        aggregate usage (for example, how many people reach a verdict). When
+        enabled, GA4 sets cookies and a pseudonymous identifier in your browser; we
+        use it only for aggregate analytics and never to identify you personally.
+        See Google's
         <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.
       </li>
     </ul>
+
+    <h2>Cookies</h2>
+    <p>
+      GasMath sets no cookies of its own — your preferences live in local storage,
+      not cookies. The only cookies that may be set are Google Analytics' own, and
+      only if analytics is enabled (see above).
+    </p>
 
     <h2>What we do not do</h2>
     <p>
