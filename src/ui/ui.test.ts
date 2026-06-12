@@ -2,6 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mockProvider } from '../data/mock-provider';
 import { decide } from '../engine/engine';
+import type { Candidate } from '../engine/types';
 import {
   isHybridNoticeHidden,
   loadSettings,
@@ -125,7 +126,7 @@ describe('home / fuel gauge', () => {
 });
 
 describe('verdict screen', () => {
-  it('renders exactly one station with savings copy and Google attribution', async () => {
+  it('shows closest and cheapest cards with addresses, prices, savings, attribution', async () => {
     const candidates = await mockProvider.getCandidates({ lat: 0, lng: 0 }, SETTINGS);
     const verdict = decide(candidates, SETTINGS, 0.5, new Date());
     expect(verdict.kind).toBe('verdict');
@@ -139,16 +140,57 @@ describe('verdict screen', () => {
       onBack: vi.fn(),
     });
 
-    // One verdict, never a list (hard rule 2): a single station heading.
-    expect(root.querySelectorAll('h2')).toHaveLength(1);
-    expect(root.textContent).toContain('Mobil — Riverside');
-    // Full street address shown below the station name.
-    expect(root.querySelector('.station-address')!.textContent).toContain('88 Riverside Dr');
-    expect(root.textContent).toContain("You'll save");
-    // Google attribution present (hard rule 6): the "Powered by Google" logo.
+    // Closest-vs-cheapest: exactly two cards (nearest, then the winner).
+    const cards = root.querySelectorAll<HTMLElement>('.verdict-card');
+    expect(cards).toHaveLength(2);
+
+    // Card 1 = closest eligible (Shell at 0.6 mi), not the emphasized one.
+    expect(cards[0].textContent).toContain('Shell — Main St');
+    expect(cards[0].querySelector('.station-address')!.textContent).toContain('101 Main St');
+    expect(cards[0].classList.contains('verdict-card-best')).toBe(false);
+
+    // Card 2 = cheapest (Mobil), emphasized with the Best Value badge + savings.
+    expect(cards[1].textContent).toContain('Mobil — Riverside');
+    expect(cards[1].querySelector('.station-address')!.textContent).toContain('88 Riverside Dr');
+    expect(cards[1].classList.contains('verdict-card-best')).toBe(true);
+    expect(cards[1].textContent).toContain('Best Value');
+    expect(cards[1].textContent).toContain("You'll save");
+
+    // Google attribution present (hard rule 6); club stations absent (hard rule 3).
     expect(root.querySelector('.attribution-logo')!.getAttribute('alt')).toBe('Powered by Google');
-    // Club stations must be entirely absent for non-members (hard rule 3).
     expect(root.textContent).not.toContain('Costco');
+  });
+
+  it('collapses to one card when the closest station is also the cheapest', () => {
+    const fresh = (price: number) => ({ price, updatedAt: new Date() });
+    const candidate = (distanceMiles: number, price: number, name: string, address: string): Candidate => ({
+      station: { placeId: name, name, address, brand: name, club: null, isTopTier: true, prices: { regular: fresh(price) } },
+      distanceMiles,
+      roundTripExtraMiles: 2 * distanceMiles,
+    });
+    // Nearest is also cheapest → winnerIsNearest.
+    const verdict = decide(
+      [candidate(0.5, 2.5, 'Cheap Near', '1 A St'), candidate(5, 3.5, 'Pricey Far', '9 B St')],
+      SETTINGS,
+      0.5,
+      new Date(),
+    );
+    expect(verdict.kind).toBe('verdict');
+
+    const root = mount();
+    renderVerdict(root, {
+      verdict,
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+    });
+
+    expect(root.querySelectorAll('.verdict-card')).toHaveLength(1);
+    expect(root.textContent).toContain('Cheap Near');
+    expect(root.textContent).toContain('Also your cheapest');
+    expect(root.textContent).not.toContain('Pricey Far');
+    expect(root.textContent).not.toContain('by driving here instead');
   });
 
   it('wires the Top Tier relaxation offer', async () => {

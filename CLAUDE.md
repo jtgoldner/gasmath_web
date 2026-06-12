@@ -14,7 +14,7 @@ GasMath (https://gasmath.app) answers one question: **which gas station is actua
 ## Hard rules (do not violate, do not "improve" away)
 
 1. **Zero user data on the server.** No accounts, no login, no server-side storage of anything user-specific. All personalization (vehicle, club membership, Top Tier toggle, octane preference) lives in browser localStorage.
-2. **One verdict.** Never render a ranked list or second option.
+2. **One decision, not a list.** The verdict screen may show the *closest* station alongside the *cheapest* to make the cost delta explicit (closest-vs-cheapest, adopted 2026-06-12) — this is a single decision framework that shows its work, not a ranked list. Never render a generic ranked list of 3+ options or a search-results view. When the closest is also the cheapest, collapse to one card.
 3. **Club filter is absolute.** Non-members never see warehouse club stations (Costco, BJ's) — not grayed out, not "FYI" — absent.
 4. **Never recommend on a guessed price.** Stations missing a price for the selected grade, or with prices older than the staleness threshold, are excluded.
 5. **Do not change existing functionality when adding features.** When in doubt, ask.

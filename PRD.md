@@ -1,8 +1,8 @@
 # GasMath — Product Requirements Document
 
-**Version:** 1.3
+**Version:** 1.4
 **Owner:** Jonathan Goldner
-**Date:** June 11, 2026
+**Date:** June 12, 2026
 **Status:** Build-ready — all product decisions resolved; Q8/Q9 are build-time tasks with agreed approaches
 
 ---
@@ -34,7 +34,7 @@ Unlike price-listing apps (GasBuddy, Google Maps), GasMath computes the *true to
 - Multiple vehicle support (post-MVP)
 - Dashboard photo upload for fuel level reading (post-MVP)
 - Native iOS app (post-MVP; web-first strategy)
-- Second-choice or ranked-list output — **one answer only**
+- Ranked-list / search-results output (3+ options). The verdict screen *does* compare the closest vs. the cheapest station to show the cost delta (v1.4) — a single decision framework, not a list.
 - User accounts, server-side user data storage of any kind
 
 ---
@@ -76,8 +76,8 @@ Unlike price-listing apps (GasBuddy, Google Maps), GasMath computes the *true to
    - **Continuous selection** — user can choose any point, not locked to quarters or eighths
    - Slider value + vehicle tank capacity → gallons needed
 3. **Computation** (see §6)
-4. **Verdict screen:** One recommendation. *"The most cost-effective gas station for you right now is ___. You'll save $X by going to this station."* No second option, no ranked list.
-   - **$X baseline:** savings vs. filling up at the nearest eligible station — the "autopilot" default. If the winner *is* the nearest station, show affirming copy instead (e.g., "Good news — your closest station is also your cheapest.").
+4. **Verdict screen:** a closest-vs-cheapest comparison (evolved from "one recommendation" — v1.4, 2026-06-12). Two stacked cards make the cost delta explicit: **your closest station** (nearest eligible, regardless of price) and **your cheapest station** (the winner), with *"You'll save $X by driving here instead."* This is one decision framework that shows its work — not a ranked list. When the winner *is* the nearest station, collapse to a single card flagged "also your cheapest."
+   - **$X baseline:** savings vs. filling up at the nearest eligible station — the "autopilot" default. The delta shown equals the difference between the two cards' estimated costs (effective cost: gallons needed × price plus the fuel to drive there).
 
 ### 5.3 Settings
 - Change vehicle (single vehicle only at MVP)

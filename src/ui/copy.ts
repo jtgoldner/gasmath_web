@@ -42,12 +42,13 @@ export const COPY = {
   },
 
   verdict: {
-    heading: 'Fill up here',
-    savings: (station: string, amount: string) =>
-      `You'll save ${amount} by going to ${station}.`,
-    affirm: 'Good news — your closest station is also your cheapest.',
-    fillCost: (cost: string) => `Estimated fill-up: ${cost}`,
-    perGallon: (price: string, grade: string) => `${price}/gal ${grade}`,
+    closestLabel: 'Your closest station',
+    cheapestLabel: 'Your cheapest station',
+    bestValue: 'Best Value',
+    alsoCheapest: 'Also your cheapest',
+    estimatedCost: 'Estimated cost',
+    saveByDriving: (amount: string) => `You'll save ${amount} by driving here instead.`,
+    perGallon: (grade: string) => `/gal ${grade}`,
     distance: (miles: string) => `${miles} mi away`,
     relaxTopTier: 'No Top Tier stations nearby have current prices. Want to see all stations?',
     relaxStaleness: 'No stations nearby have recent prices. Want to include older prices?',

@@ -344,18 +344,134 @@ input[type='checkbox'] {
   margin-top: auto;
 }
 
-/* ---- Verdict ---- */
+/* ---- Verdict: closest-vs-cheapest cards ---- */
 .savings {
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--accent);
-  margin: 0;
+  margin: 4px 0 0;
 }
 
 .station-address {
   color: var(--muted);
   font-size: 0.95rem;
   margin: 0;
+}
+
+.verdict-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: verdict-in 260ms ease-out both;
+}
+
+@keyframes verdict-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verdict-cards {
+    animation: none;
+  }
+}
+
+.verdict-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Headline result gets the accent and a subtle lift. */
+.verdict-card-best {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(245, 158, 11, 0.12);
+}
+
+.verdict-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.verdict-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.best-badge {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.station-name {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.card-detail {
+  font-size: 0.85rem;
+}
+
+/* The numbers users came for — larger and bolder than their labels. */
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.price-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.price-unit {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.est-cost {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 2px;
+}
+
+.est-label {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.est-num {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--ink);
 }
 
 /* Google attribution — visually distinct from app content (Google policy). */

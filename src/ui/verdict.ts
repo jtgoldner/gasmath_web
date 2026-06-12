@@ -1,4 +1,5 @@
 import { selectedGrade, type Verdict } from '../engine/engine';
+import type { Candidate, FuelGrade } from '../engine/types';
 import type { AppSettings } from '../storage';
 import { COPY, money } from './copy';
 import { backButton, headerHtml } from './header';
@@ -11,7 +12,60 @@ export interface VerdictProps {
   onBack: () => void;
 }
 
-/** One verdict, never a list (hard rule 2). Offers and dead-ends share this screen. */
+/**
+ * One card per station, used to build the closest-vs-cheapest comparison.
+ * "Estimated cost" is the engine's effective cost (gallons needed × price, plus
+ * the fuel to drive there), so the two cards' costs differ by exactly the
+ * "You'll save …" amount.
+ */
+function stationCardHtml(opts: {
+  label: string;
+  candidate: Candidate;
+  grade: FuelGrade;
+  cost: number;
+  best?: boolean;
+  badge?: string;
+  savings?: number;
+}): string {
+  const c = COPY.verdict;
+  const s = opts.candidate.station;
+  const price = s.prices[opts.grade]!.price;
+  const address = s.address ? `<p class="station-address">${s.address}</p>` : '';
+  const badge = opts.badge ? `<span class="best-badge">${opts.badge}</span>` : '';
+  const savingsLine =
+    opts.savings !== undefined ? `<p class="savings">${c.saveByDriving(money(opts.savings))}</p>` : '';
+
+  return `
+    <section class="verdict-card${opts.best ? ' verdict-card-best' : ''}">
+      <div class="verdict-card-head">
+        <p class="verdict-label">${opts.label}</p>
+        ${badge}
+      </div>
+      <h2 class="station-name">${s.name}</h2>
+      ${address}
+      <p class="muted card-detail">${c.distance(opts.candidate.distanceMiles.toFixed(1))}</p>
+      <div class="price-row">
+        <span class="price-num">${money(price)}</span>
+        <span class="price-unit">${c.perGallon(opts.grade)}</span>
+      </div>
+      <div class="est-cost">
+        <span class="est-label">${c.estimatedCost}</span>
+        <span class="est-num">${money(opts.cost)}</span>
+      </div>
+      ${savingsLine}
+      <!-- FUTURE(map): insert a small Google Map of this station and a
+           "Get Directions" link here. The map MUST be a Google Map (PRD §7).
+           Not built yet — placeholder for a later pass. -->
+    </section>`;
+}
+
+/**
+ * Verdict screen. A decided verdict shows a closest-vs-cheapest comparison —
+ * two cards that make the cost delta explicit (or one card when they're the
+ * same station). This is a single decision framework, not a ranked list
+ * (CLAUDE.md hard rule 2 / PRD §5.2). Relaxation offers and dead-ends keep the
+ * single-card layout.
+ */
 export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
   const v = props.verdict;
   const c = COPY.verdict;
@@ -20,22 +74,32 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
   switch (v.kind) {
     case 'verdict': {
       const grade = selectedGrade(props.settings);
-      const price = v.winner.station.prices[grade]!.price;
-      const savingsLine = v.winnerIsNearest
-        ? `<p class="savings">${c.affirm}</p>`
-        : `<p class="savings">${c.savings(v.winner.station.name, money(v.savings))}</p>`;
-      const address = v.winner.station.address
-        ? `<p class="station-address">${v.winner.station.address}</p>`
-        : '';
-      body = `
-        <section class="card">
-          <p class="muted">${c.heading}</p>
-          <h2>${v.winner.station.name}</h2>
-          ${address}
-          <p>${c.perGallon(money(price), grade)} · ${c.distance(v.winner.distanceMiles.toFixed(1))}</p>
-          ${savingsLine}
-          <p class="muted">${c.fillCost(money(v.winnerCost))}</p>
-        </section>`;
+      const cards = v.winnerIsNearest
+        ? // Closest is also cheapest — one card, flagged as both.
+          stationCardHtml({
+            label: c.closestLabel,
+            candidate: v.winner,
+            grade,
+            cost: v.winnerCost,
+            best: true,
+            badge: c.alsoCheapest,
+          })
+        : stationCardHtml({
+            label: c.closestLabel,
+            candidate: v.nearest,
+            grade,
+            cost: v.nearestCost,
+          }) +
+          stationCardHtml({
+            label: c.cheapestLabel,
+            candidate: v.winner,
+            grade,
+            cost: v.winnerCost,
+            best: true,
+            badge: c.bestValue,
+            savings: v.savings,
+          });
+      body = `<div class="verdict-cards">${cards}</div>`;
       break;
     }
     case 'offer-relax-top-tier':
