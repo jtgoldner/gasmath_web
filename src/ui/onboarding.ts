@@ -51,7 +51,6 @@ export function renderOnboarding(
         ${headerHtml()}
         <p class="muted">${COPY.tagline}</p>
         <section class="card">${bodies[name]()}</section>
-        <div class="dots">${STEPS.map((_, i) => `<span class="${i === step ? 'on' : ''}"></span>`).join('')}</div>
         <div class="nav">
           ${step > 0 ? `<button class="ghost" data-nav="back">${o.back}</button>` : '<span></span>'}
           <button class="primary" data-nav="next" ${name === 'vehicle' && !draft.vehicle ? 'disabled' : ''}>

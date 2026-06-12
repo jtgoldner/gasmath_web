@@ -319,24 +319,6 @@ input[type='checkbox'] {
   text-align: right;
 }
 
-/* ---- Onboarding progress dots ---- */
-.dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-.dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--line);
-}
-
-.dots span.on {
-  background: var(--accent);
-}
-
 .nav {
   display: flex;
   justify-content: space-between;
