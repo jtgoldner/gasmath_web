@@ -1,0 +1,28 @@
+# GasMath
+
+> GasMath finds the single most cost-effective gas station for you right now — factoring live station prices, real driving distance, your vehicle's fuel economy, and how much gas you actually need. It returns one decision, not a directory.
+
+GasMath is a privacy-first progressive web app (PWA). There are no accounts and no sign-in, and no user data is stored on its servers — all personalization (vehicle, warehouse-club membership, Top Tier preference, fuel grade) lives only in the browser's local storage. Your location is used transiently to find nearby stations and is never stored.
+
+The verdict screen compares two stations so the tradeoff is explicit: your **closest / most efficient** station (the one that burns the least fuel to reach) and your **cheapest** station (lowest true total cost), with the dollar savings of driving to the cheaper one.
+
+## How the decision works
+- Effective cost = (gallons needed + fuel burned driving there) × station price
+- Gallons needed comes from a fuel-gauge slider × the vehicle's tank capacity
+- The winner is the lowest effective cost; ties within $0.05 go to the nearer station
+- Warehouse-club stations (Costco, BJ's, Sam's Club) appear only for members
+- Optional Top Tier–only filter; prices older than 12 hours are excluded
+
+## Data sources
+- Google Places API (New) — station locations and live fuel prices
+- OpenRouteService — real driving distances
+- EPA fuel-economy data — vehicle combined MPG (merged with a curated tank-capacity table)
+
+## Pages
+- [GasMath app](https://gasmath.app/): the tool itself
+- [Privacy Policy](https://gasmath.app/privacy.html): local-only storage, transient geolocation, third-party services
+- [Terms of Use](https://gasmath.app/terms.html): terms and accuracy disclaimers
+
+## Notes
+- No advertising and no selling of data.
+- Estimates can be inaccurate, especially for hybrid and plug-in hybrid vehicles; always verify the posted price at the pump.
