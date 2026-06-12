@@ -42,7 +42,7 @@ export const COPY = {
   },
 
   verdict: {
-    closestLabel: 'Your closest station',
+    closestLabel: 'Your closest / most efficient station',
     cheapestLabel: 'Your cheapest station',
     bestValue: 'Best Value',
     alsoCheapest: 'Also your cheapest',
