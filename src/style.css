@@ -49,6 +49,17 @@ body {
   justify-content: center;
 }
 
+/* Screen-level text (taglines, section titles) sits at the screen's padding
+   edge, but text inside cards is pushed in further by the card's own padding.
+   Inset screen-level text by the card padding so both share one left edge.
+   Done at the .screen container level so every screen stays consistent.
+   Keep this equal to the .card horizontal padding (16px). */
+.screen > p,
+.screen > h1,
+.screen > .screen-title {
+  padding-inline: 16px;
+}
+
 h1 {
   font-size: 1.35rem;
   margin: 0;
