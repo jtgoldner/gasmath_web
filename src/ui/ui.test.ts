@@ -212,6 +212,38 @@ describe('verdict screen', () => {
     click(root, '[data-act="relax-top-tier"]');
     expect(onRelaxTopTier).toHaveBeenCalled();
   });
+
+  it('shows the Buy Me a Coffee footer link on the verdict screen only', async () => {
+    const candidates = await mockProvider.getCandidates({ lat: 0, lng: 0 }, SETTINGS);
+    const verdict = decide(candidates, SETTINGS, 0.5, new Date());
+
+    const root = mount();
+    renderVerdict(root, {
+      verdict,
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+    });
+
+    const link = root.querySelector<HTMLAnchorElement>('.coffee-note a');
+    expect(link).not.toBeNull();
+    expect(link!.getAttribute('href')).toBe('https://buymeacoffee.com/jonathangoldner');
+    expect(link!.getAttribute('target')).toBe('_blank');
+    expect(link!.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(link!.textContent).toBe('buy me one');
+
+    // Not present on other screens (e.g., home).
+    const home = mount();
+    renderHome(home, {
+      settings: SETTINGS,
+      onOpenSettings: vi.fn(),
+      onFind: vi.fn(),
+      showHybridNotice: false,
+      onOpenHybridInfo: vi.fn(),
+    });
+    expect(home.querySelector('a[href*="buymeacoffee"]')).toBeNull();
+  });
 });
 
 describe('settings screen', () => {

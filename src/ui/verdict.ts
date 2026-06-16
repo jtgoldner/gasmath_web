@@ -125,6 +125,8 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
     <main class="screen">
       ${headerHtml({ left: backButton })}
       ${body}
+      <!-- Low-emphasis support link — verdict screen only, not a competing CTA. -->
+      <p class="coffee-note">${c.coffeePrefix}<a href="${c.coffeeUrl}" target="_blank" rel="noopener noreferrer">${c.coffeeLink}</a>${c.coffeeSuffix}</p>
       <!-- Legal requirement (hard rule 6, PRD §7): Google attribution must
            accompany Places station/price data. Map-free display requires the
            official "Powered by Google" logo; the asset lives in

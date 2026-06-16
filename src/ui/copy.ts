@@ -60,6 +60,11 @@ export const COPY = {
     // "Powered by Google" logo (not the "Google Maps" logo). This is the alt
     // text / fallback for that logo image.
     attributionAlt: 'Powered by Google',
+    // Low-emphasis support link, verdict screen only. "buyLink" is the clickable part.
+    coffeePrefix: 'This site is fueled by coffee. Want to ',
+    coffeeLink: 'buy me one',
+    coffeeSuffix: '?',
+    coffeeUrl: 'https://buymeacoffee.com/jonathangoldner',
   },
 
   settings: {
