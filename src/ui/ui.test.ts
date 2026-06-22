@@ -110,29 +110,26 @@ describe('home / fuel gauge', () => {
     expect(onFind).toHaveBeenCalledWith(0.25);
   });
 
-  it('disables Find at zero gallons and re-enables it for any nonzero amount', () => {
+  it('floors the gauge at 0.1 gallons so Find is always actionable', () => {
     const root = mount();
     const onFind = vi.fn();
     renderHome(root, { ...baseProps, onFind });
     const gauge = root.querySelector<HTMLInputElement>('[data-act="gauge"]')!;
     const find = root.querySelector<HTMLButtonElement>('[data-act="find"]')!;
+    const gallons = root.querySelector('[data-act="gallons"]')!;
 
-    // Default 0.5 → enabled.
-    expect(find.disabled).toBe(false);
-
-    // Exactly empty → disabled and non-actionable.
+    // Dragging to the very bottom (0) is floored to 0.1 gallons, not 0.0.
     gauge.value = '0';
     gauge.dispatchEvent(new Event('input'));
-    expect(find.disabled).toBe(true);
-    find.click();
-    expect(onFind).not.toHaveBeenCalled();
-
-    // Any nonzero amount, however small → enabled and actionable.
-    gauge.value = '0.005';
-    gauge.dispatchEvent(new Event('input'));
+    expect(gallons.textContent).toBe('0.1');
     expect(find.disabled).toBe(false);
+
+    // The CTA proceeds with a positive fraction equal to the 0.1 gal floor.
     find.click();
-    expect(onFind).toHaveBeenCalledWith(0.005);
+    expect(onFind).toHaveBeenCalledTimes(1);
+    const fraction = onFind.mock.calls[0][0] as number;
+    expect(fraction).toBeGreaterThan(0);
+    expect(fraction * SETTINGS.vehicle.tankCapacityGal).toBeCloseTo(0.1);
   });
 
   it('fills the pump and moves the handle to match the fraction', () => {

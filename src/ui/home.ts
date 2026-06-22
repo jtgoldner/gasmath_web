@@ -17,6 +17,10 @@ const BODY_TOP = 14;
 const BODY_BOTTOM = 56;
 const BODY_HEIGHT = BODY_BOTTOM - BODY_TOP; // 42
 
+// The gauge floors here — the bottom of the range is 0.1 gallons, never 0,
+// so the "Find" CTA is always actionable.
+const MIN_GALLONS = 0.1;
+
 /**
  * Vertical pump-fill gauge (PRD §5.2). The fraction is how much gas the user
  * needs as a share of tank capacity — gallons_needed = fraction × tank (§6).
@@ -26,6 +30,7 @@ const BODY_HEIGHT = BODY_BOTTOM - BODY_TOP; // 42
  */
 export function renderHome(root: HTMLElement, props: HomeProps): void {
   const tank = props.settings.vehicle.tankCapacityGal;
+  const minFraction = MIN_GALLONS / tank; // fraction that yields the 0.1 gal floor
   const { year, make, model } = props.settings.vehicleId;
 
   root.innerHTML = `
@@ -92,9 +97,9 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
   const gallons = root.querySelector<HTMLElement>('[data-act="gallons"]')!;
   const findBtn = root.querySelector<HTMLButtonElement>('[data-act="find"]')!;
 
-  // Mirror the input value into the SVG fill + handle + gallons readout, and
-  // gate the CTA: zero gallons can't proceed, any nonzero amount can (PRD §6
-  // needs a positive fill). Runs reactively on every drag.
+  // Mirror the input value into the SVG fill + handle + gallons readout. The
+  // value is floored at MIN_GALLONS by the input handler below, so gallons is
+  // always > 0; findBtn.disabled stays as a defensive invariant (never true now).
   function paint(): void {
     const fraction = Number(gauge.value);
     const boundary = BODY_TOP + (1 - fraction) * BODY_HEIGHT;
@@ -106,14 +111,18 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
     findBtn.disabled = !(fraction > 0);
   }
   paint();
-  gauge.addEventListener('input', paint);
+  gauge.addEventListener('input', () => {
+    // Floor the value so the gauge never sits below 0.1 gallons (drag + keyboard).
+    if (Number(gauge.value) < minFraction) gauge.value = String(minFraction);
+    paint();
+  });
 
   // Continuous drag (mouse + touch via pointer events): vertical position over
   // the track maps to fraction — top = full, bottom = empty.
   function setFromClientY(clientY: number): void {
     const rect = track.getBoundingClientRect();
     if (rect.height === 0) return;
-    const fraction = Math.min(1, Math.max(0, (rect.bottom - clientY) / rect.height));
+    const fraction = Math.min(1, Math.max(minFraction, (rect.bottom - clientY) / rect.height));
     gauge.value = String(fraction);
     gauge.dispatchEvent(new Event('input', { bubbles: true }));
   }
