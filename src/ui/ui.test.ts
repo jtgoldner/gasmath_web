@@ -110,6 +110,31 @@ describe('home / fuel gauge', () => {
     expect(onFind).toHaveBeenCalledWith(0.25);
   });
 
+  it('fills the pump and moves the handle to match the fraction', () => {
+    const root = mount();
+    renderHome(root, baseProps);
+    const gauge = root.querySelector<HTMLInputElement>('[data-act="gauge"]')!;
+    const fill = root.querySelector('[data-act="pump-fill"]')!;
+    const handle = root.querySelector('[data-act="pump-handle"]')!;
+
+    // Boundary y in the viewBox = 14 + (1 - fraction) × 42.
+    // Default 0.5 → 35.
+    expect(fill.getAttribute('y')).toBe('35');
+    expect(handle.getAttribute('y1')).toBe('35');
+
+    // Quarter tank (0.25) → 45.5, fill height 56 − 45.5.
+    gauge.value = '0.25';
+    gauge.dispatchEvent(new Event('input'));
+    expect(fill.getAttribute('y')).toBe('45.5');
+    expect(Number(fill.getAttribute('height'))).toBeCloseTo(10.5);
+
+    // Full (1) → boundary at the body top, full body height.
+    gauge.value = '1';
+    gauge.dispatchEvent(new Event('input'));
+    expect(fill.getAttribute('y')).toBe('14');
+    expect(fill.getAttribute('height')).toBe('42');
+  });
+
   it('shows the hybrid prompt only when enabled, and opens the info screen on tap', () => {
     const hidden = mount();
     renderHome(hidden, { ...baseProps, showHybridNotice: false });

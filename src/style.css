@@ -245,89 +245,82 @@ input[type='checkbox'] {
   display: none;
 }
 
-/* ---- Fuel gauge: E left, F right, quarter-tank hash marks (PRD §5.2) ---- */
-.gauge {
+/* ---- Vertical pump-fill gauge (PRD §5.2) ---- */
+.pump-gauge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 8px 0 4px;
+}
+
+.pump-column {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
 }
 
-.ticks {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 10px;
+.pump-stage {
+  position: relative;
+  width: 130px;
+  line-height: 0;
 }
 
-.ticks span {
-  width: 2px;
-  height: 12px;
-  background: var(--muted);
-  border-radius: 1px;
+.pump-svg-gauge {
+  display: block;
+  width: 130px;
+  height: auto;
 }
 
-.gauge input[type='range'] {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 36px;
-  margin: 0;
-  background: transparent;
-  cursor: pointer;
+/* Drag surface overlaying exactly the pump body band (viewBox y 14..56 of 64). */
+.pump-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 21.875%;
+  height: 65.625%;
+  cursor: ns-resize;
+  touch-action: none;
 }
 
-.gauge input[type='range']::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--line);
-}
-
-.gauge input[type='range']::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 4px solid var(--bg);
-  margin-top: -10px;
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.gauge input[type='range']::-moz-range-track {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--line);
-}
-
-.gauge input[type='range']::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 4px solid var(--bg);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.gauge input[type='range']:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
-}
-
-.gauge-labels {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 0.78rem;
+.pump-label {
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--muted);
-  padding: 2px 2px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.gauge-labels span {
-  white-space: nowrap;
+/* Source-of-truth range input: visually hidden but keyboard/AT operable. */
+.pump-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
-.gauge-labels span:last-child {
-  text-align: right;
+.pump-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pump-gallons {
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.pump-gallons-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
 .nav {
