@@ -308,6 +308,9 @@ input[type='checkbox'] {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Reserve width for the widest reading (e.g. "32.2") so the row doesn't
+     shift when the value crosses from two to three digits (9.9 -> 10.0). */
+  min-width: 6rem;
 }
 
 .pump-gallons {
@@ -315,6 +318,8 @@ input[type='checkbox'] {
   font-weight: 700;
   line-height: 1;
   color: var(--ink);
+  /* Equal-width digits keep the number from jittering as it changes. */
+  font-variant-numeric: tabular-nums;
 }
 
 .pump-gallons-label {
