@@ -90,8 +90,11 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
   const fill = root.querySelector<SVGRectElement>('[data-act="pump-fill"]')!;
   const handle = root.querySelector<SVGLineElement>('[data-act="pump-handle"]')!;
   const gallons = root.querySelector<HTMLElement>('[data-act="gallons"]')!;
+  const findBtn = root.querySelector<HTMLButtonElement>('[data-act="find"]')!;
 
-  // Mirror the input value into the SVG fill + handle + gallons readout.
+  // Mirror the input value into the SVG fill + handle + gallons readout, and
+  // gate the CTA: zero gallons can't proceed, any nonzero amount can (PRD §6
+  // needs a positive fill). Runs reactively on every drag.
   function paint(): void {
     const fraction = Number(gauge.value);
     const boundary = BODY_TOP + (1 - fraction) * BODY_HEIGHT;
@@ -100,6 +103,7 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
     handle.setAttribute('y1', String(boundary));
     handle.setAttribute('y2', String(boundary));
     gallons.textContent = (fraction * tank).toFixed(1);
+    findBtn.disabled = !(fraction > 0);
   }
   paint();
   gauge.addEventListener('input', paint);
@@ -131,7 +135,8 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
 
   root.querySelector('[data-act="settings"]')!.addEventListener('click', props.onOpenSettings);
   root.querySelector('[data-act="hybrid"]')?.addEventListener('click', props.onOpenHybridInfo);
-  root.querySelector('[data-act="find"]')!.addEventListener('click', () => {
-    props.onFind(Number(gauge.value));
+  findBtn.addEventListener('click', () => {
+    // Guard in addition to the disabled attribute — zero gallons never proceeds.
+    if (Number(gauge.value) > 0) props.onFind(Number(gauge.value));
   });
 }

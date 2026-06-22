@@ -110,6 +110,31 @@ describe('home / fuel gauge', () => {
     expect(onFind).toHaveBeenCalledWith(0.25);
   });
 
+  it('disables Find at zero gallons and re-enables it for any nonzero amount', () => {
+    const root = mount();
+    const onFind = vi.fn();
+    renderHome(root, { ...baseProps, onFind });
+    const gauge = root.querySelector<HTMLInputElement>('[data-act="gauge"]')!;
+    const find = root.querySelector<HTMLButtonElement>('[data-act="find"]')!;
+
+    // Default 0.5 → enabled.
+    expect(find.disabled).toBe(false);
+
+    // Exactly empty → disabled and non-actionable.
+    gauge.value = '0';
+    gauge.dispatchEvent(new Event('input'));
+    expect(find.disabled).toBe(true);
+    find.click();
+    expect(onFind).not.toHaveBeenCalled();
+
+    // Any nonzero amount, however small → enabled and actionable.
+    gauge.value = '0.005';
+    gauge.dispatchEvent(new Event('input'));
+    expect(find.disabled).toBe(false);
+    find.click();
+    expect(onFind).toHaveBeenCalledWith(0.005);
+  });
+
   it('fills the pump and moves the handle to match the fraction', () => {
     const root = mount();
     renderHome(root, baseProps);
