@@ -70,6 +70,7 @@ export const COPY = {
   settings: {
     title: 'Settings',
     vehicle: 'Your vehicle',
+    epaInfo: (mpg: number, tank: number) => `EPA combined: ${mpg} MPG · Tank: ${tank} gal`,
     clubs: 'Warehouse clubs',
     preferences: 'Fuel preferences',
     done: 'Done',

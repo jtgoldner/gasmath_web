@@ -1,6 +1,7 @@
 import type { LatLng } from './data/provider';
 import { detourGallons, gallonsNeeded, isFresh, selectedGrade, type Relaxations } from './engine/engine';
 import type { Candidate, FuelGrade, UserSettings } from './engine/types';
+import type { AppSettings } from './storage';
 
 /**
  * DEBUG ONLY. Diagnostic trace of every candidate the engine saw, including
@@ -78,6 +79,25 @@ export function buildDebugTrace(
   rows.sort((a, b) => b.distanceMiles - a.distanceMiles);
 
   return { grade, sliderFraction, generatedAt: now.toISOString(), rows };
+}
+
+/** Vehicle identity + the EPA-derived MPG/tank values the engine used this session. */
+export interface DebugVehicleInfo {
+  year: number;
+  make: string;
+  model: string;
+  combinedMpg: number;
+  tankCapacityGal: number;
+}
+
+export function buildDebugVehicleInfo(settings: AppSettings): DebugVehicleInfo {
+  return {
+    year: settings.vehicleId.year,
+    make: settings.vehicleId.make,
+    model: settings.vehicleId.model,
+    combinedMpg: settings.vehicle.combinedMpg,
+    tankCapacityGal: settings.vehicle.tankCapacityGal,
+  };
 }
 
 /** Reads the debug flag from the page URL: gasmath.app?debug=true. */

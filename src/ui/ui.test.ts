@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
 import { mockProvider } from '../data/mock-provider';
-import { buildDebugTrace } from '../debug';
+import { vehicleLookups } from '../data/vehicles';
+import { buildDebugTrace, buildDebugVehicleInfo } from '../debug';
 import { decide } from '../engine/engine';
 import type { Candidate } from '../engine/types';
 import {
@@ -264,6 +265,29 @@ describe('verdict screen', () => {
     expect(warning!.textContent).toContain('-74.9241');
   });
 
+  it('shows the session vehicle (EPA MPG + tank) in the debug panel metadata', async () => {
+    const candidates = await mockProvider.getCandidates({ lat: 0, lng: 0 }, SETTINGS);
+    const verdict = decide(candidates, SETTINGS, 0.5, new Date());
+    const trace = buildDebugTrace(candidates, SETTINGS, 0.5, new Date());
+
+    const root = mount();
+    renderVerdict(root, {
+      verdict,
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+      debugTrace: trace,
+      providerDebugMeta: mockProvider.getDebugMeta!(),
+      debugVehicle: buildDebugVehicleInfo(SETTINGS),
+    });
+
+    const panel = root.querySelector('.debug-panel')!;
+    expect(panel.textContent).toContain('2024 Toyota Camry');
+    expect(panel.textContent).toContain('32 MPG');
+    expect(panel.textContent).toContain('15.8 gal');
+  });
+
   it('collapses to one card when the closest station is also the cheapest', () => {
     const fresh = (price: number) => ({ price, updatedAt: new Date() });
     const candidate = (distanceMiles: number, price: number, name: string, address: string): Candidate => ({
@@ -366,5 +390,25 @@ describe('settings screen', () => {
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ clubMemberships: ['costco'], topTierOnly: false }),
     );
+  });
+
+  it('shows a read-only EPA combined MPG / tank readout that updates with the vehicle', () => {
+    // Resolved against the real bundled dataset (same source the picker uses),
+    // so this stays correct even if EPA/tank values are refreshed later.
+    const camry = vehicleLookups.findVehicle(2024, 'Toyota', 'Camry')!;
+    const corolla = vehicleLookups.findVehicle(2024, 'Toyota', 'Corolla')!;
+
+    const root = mount();
+    renderSettings(root, { settings: SETTINGS, onChange: vi.fn(), onBack: vi.fn() });
+
+    const epaInfo = root.querySelector('[data-act="epa-info"]')!;
+    expect(epaInfo.textContent).toContain('EPA combined');
+    expect(epaInfo.textContent).toContain(`${camry.combinedMpg} MPG`);
+    expect(epaInfo.textContent).toContain(`${camry.tankCapacityGal} gal`);
+
+    // Display-only: changing the model updates the readout, no editing of it.
+    pick(root, 'model', 'Corolla');
+    expect(epaInfo.textContent).toContain(`${corolla.combinedMpg} MPG`);
+    expect(epaInfo.textContent).toContain(`${corolla.tankCapacityGal} gal`);
   });
 });

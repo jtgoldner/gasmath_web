@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
-import { buildDebugTrace, getDebugLocationOverride, isDebugMode } from './debug';
+import { buildDebugTrace, buildDebugVehicleInfo, getDebugLocationOverride, isDebugMode } from './debug';
 import type { Candidate, PriceQuote, Station, UserSettings } from './engine/types';
+import type { AppSettings } from './storage';
 
 const NOW = new Date('2026-06-13T12:00:00Z');
 
@@ -105,6 +106,25 @@ describe('buildDebugTrace', () => {
 
     const withRelax = buildDebugTrace([offBrand], settings(), 0.5, NOW, { topTier: true });
     expect(withRelax.rows[0].excludedBy).toEqual([]);
+  });
+});
+
+describe('buildDebugVehicleInfo', () => {
+  it('pulls year/make/model and the EPA combined MPG/tank used for the session', () => {
+    const appSettings: AppSettings = {
+      vehicleId: { year: 2024, make: 'Toyota', model: 'Camry' },
+      vehicle: { combinedMpg: 32, tankCapacityGal: 15.8 },
+      clubMemberships: [],
+      topTierOnly: true,
+      preferPremium: false,
+    };
+    expect(buildDebugVehicleInfo(appSettings)).toEqual({
+      year: 2024,
+      make: 'Toyota',
+      model: 'Camry',
+      combinedMpg: 32,
+      tankCapacityGal: 15.8,
+    });
   });
 });
 

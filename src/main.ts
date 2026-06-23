@@ -1,6 +1,6 @@
 import './style.css';
 import { initAnalytics, track } from './analytics';
-import { buildDebugTrace, getDebugLocationOverride, isDebugMode } from './debug';
+import { buildDebugTrace, buildDebugVehicleInfo, getDebugLocationOverride, isDebugMode } from './debug';
 import { liveProvider } from './data/live-provider';
 import { mockProvider } from './data/mock-provider';
 import type { LatLng, StationProvider } from './data/provider';
@@ -174,6 +174,7 @@ function showVerdict(): void {
           debugTrace: buildDebugTrace(session.candidates, settings, session.fraction, new Date(), session.relax),
           providerDebugMeta: provider.getDebugMeta?.() ?? null,
           debugLocationOverride: DEBUG_LOCATION,
+          debugVehicle: buildDebugVehicleInfo(settings),
         }
       : {}),
   });

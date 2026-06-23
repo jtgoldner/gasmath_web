@@ -1,5 +1,5 @@
 import type { LatLng, ProviderDebugMeta } from '../data/provider';
-import type { DebugTrace } from '../debug';
+import type { DebugTrace, DebugVehicleInfo } from '../debug';
 import { money } from './copy';
 
 /**
@@ -11,6 +11,7 @@ export function debugPanelHtml(
   trace: DebugTrace,
   providerMeta: ProviderDebugMeta | null,
   locationOverride: LatLng | null = null,
+  vehicle: DebugVehicleInfo | null = null,
 ): string {
   const queryRows = (providerMeta?.queries ?? [])
     .map(
@@ -51,6 +52,11 @@ export function debugPanelHtml(
       <h2>Debug trace <span class="muted">(?debug=true)</span></h2>
       ${overrideWarning}
       <p class="muted">Grade: ${trace.grade} · Slider fraction: ${trace.sliderFraction.toFixed(3)} · Generated: ${trace.generatedAt}</p>
+      <p class="muted">Vehicle: ${
+        vehicle
+          ? `${vehicle.year} ${vehicle.make} ${vehicle.model} — EPA combined ${vehicle.combinedMpg} MPG · Tank ${vehicle.tankCapacityGal} gal`
+          : 'no vehicle data captured for this session'
+      }</p>
 
       <h3>Provider queries</h3>
       ${

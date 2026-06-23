@@ -29,6 +29,7 @@ export function renderSettings(root: HTMLElement, props: SettingsProps): void {
       <section class="card">
         <h2>${COPY.settings.vehicle}</h2>
         ${vehiclePickerHtml()}
+        <p class="muted" data-act="epa-info"></p>
       </section>
       <section class="card">
         <h2>${COPY.settings.clubs}</h2>
@@ -43,11 +44,16 @@ export function renderSettings(root: HTMLElement, props: SettingsProps): void {
       </section>
     </main>`;
 
+  const epaInfo = root.querySelector<HTMLElement>('[data-act="epa-info"]')!;
+
   // Vehicle changes apply only once a complete, gasoline vehicle is picked;
   // an in-progress or diesel selection leaves the saved vehicle untouched.
   wireVehiclePicker(
     root,
     (v) => {
+      // Display-only EPA readout, kept in sync with the selector (including
+      // the initial render); blank while no vehicle is resolved.
+      epaInfo.textContent = v ? COPY.settings.epaInfo(v.combinedMpg, v.tankCapacityGal) : '';
       if (!v) return;
       apply({
         vehicleId: { year: v.year, make: v.make, model: v.model },
