@@ -1,6 +1,6 @@
 import './style.css';
 import { initAnalytics, track } from './analytics';
-import { buildDebugTrace, isDebugMode } from './debug';
+import { buildDebugTrace, getDebugLocationOverride, isDebugMode } from './debug';
 import { liveProvider } from './data/live-provider';
 import { mockProvider } from './data/mock-provider';
 import type { LatLng, StationProvider } from './data/provider';
@@ -34,6 +34,11 @@ const provider: StationProvider =
 // no effect on the real decision either way.
 const DEBUG = isDebugMode();
 
+// DEBUG ONLY: ?lat=&?lng= (alongside ?debug=true) override real geolocation
+// for testing a specific location with no GPS and no permission prompt. null
+// unless both ?debug=true and valid lat/lng are present.
+const DEBUG_LOCATION = getDebugLocationOverride();
+
 let settings: AppSettings | null = loadSettings();
 
 /** One search session; accepted relaxations re-fetch so new candidates get real routing. */
@@ -49,6 +54,9 @@ let session: {
 const FALLBACK_LOCATION: LatLng = { lat: 40.7128, lng: -74.006 };
 
 function locate(): Promise<LatLng> {
+  // DEBUG ONLY: skip navigator.geolocation entirely when a location override
+  // is active — no permission prompt, no real GPS.
+  if (DEBUG_LOCATION) return Promise.resolve(DEBUG_LOCATION);
   return new Promise((resolve) => {
     if (!('geolocation' in navigator)) return resolve(FALLBACK_LOCATION);
     navigator.geolocation.getCurrentPosition(
@@ -165,6 +173,7 @@ function showVerdict(): void {
       ? {
           debugTrace: buildDebugTrace(session.candidates, settings, session.fraction, new Date(), session.relax),
           providerDebugMeta: provider.getDebugMeta?.() ?? null,
+          debugLocationOverride: DEBUG_LOCATION,
         }
       : {}),
   });

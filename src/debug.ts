@@ -1,3 +1,4 @@
+import type { LatLng } from './data/provider';
 import { detourGallons, gallonsNeeded, isFresh, selectedGrade, type Relaxations } from './engine/engine';
 import type { Candidate, FuelGrade, UserSettings } from './engine/types';
 
@@ -82,4 +83,23 @@ export function buildDebugTrace(
 /** Reads the debug flag from the page URL: gasmath.app?debug=true. */
 export function isDebugMode(): boolean {
   return new URLSearchParams(window.location.search).get('debug') === 'true';
+}
+
+/**
+ * ?lat=&?lng= override real geolocation for testing — e.g.
+ * gasmath.app?debug=true&lat=42.7004&lng=-74.9241 runs the full engine as if
+ * physically in Cooperstown, NY, with no GPS and no permission prompt.
+ * ONLY active alongside ?debug=true; both params must be present and parse to
+ * finite numbers, or there is no override (normal geolocation flow runs).
+ */
+export function getDebugLocationOverride(): LatLng | null {
+  if (!isDebugMode()) return null;
+  const params = new URLSearchParams(window.location.search);
+  const latStr = params.get('lat');
+  const lngStr = params.get('lng');
+  if (latStr === null || lngStr === null) return null;
+  const lat = Number(latStr);
+  const lng = Number(lngStr);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
 }

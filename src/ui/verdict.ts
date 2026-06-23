@@ -1,4 +1,4 @@
-import type { ProviderDebugMeta } from '../data/provider';
+import type { LatLng, ProviderDebugMeta } from '../data/provider';
 import type { DebugTrace } from '../debug';
 import { selectedGrade, type Verdict } from '../engine/engine';
 import type { Candidate, FuelGrade } from '../engine/types';
@@ -16,6 +16,8 @@ export interface VerdictProps {
   /** DEBUG ONLY: present only when ?debug=true (see main.ts). Renders below the cards. */
   debugTrace?: DebugTrace;
   providerDebugMeta?: ProviderDebugMeta | null;
+  /** DEBUG ONLY: the ?lat=&?lng= override in effect, if any. */
+  debugLocationOverride?: LatLng | null;
 }
 
 /**
@@ -130,7 +132,7 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
   // DEBUG ONLY: rendered below the cards, only when main.ts passes a trace
   // (i.e. only when ?debug=true was on the URL). No effect otherwise.
   const debugSection = props.debugTrace
-    ? debugPanelHtml(props.debugTrace, props.providerDebugMeta ?? null)
+    ? debugPanelHtml(props.debugTrace, props.providerDebugMeta ?? null, props.debugLocationOverride ?? null)
     : '';
 
   root.innerHTML = `

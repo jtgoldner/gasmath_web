@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
-import { buildDebugTrace, isDebugMode } from './debug';
+import { buildDebugTrace, getDebugLocationOverride, isDebugMode } from './debug';
 import type { Candidate, PriceQuote, Station, UserSettings } from './engine/types';
 
 const NOW = new Date('2026-06-13T12:00:00Z');
@@ -120,5 +120,35 @@ describe('isDebugMode', () => {
 
     window.history.pushState(null, '', '/?debug=1');
     expect(isDebugMode()).toBe(false);
+  });
+});
+
+describe('getDebugLocationOverride', () => {
+  it('returns the override when debug=true and both lat/lng parse to numbers', () => {
+    window.history.pushState(null, '', '/?debug=true&lat=42.7004&lng=-74.9241');
+    expect(getDebugLocationOverride()).toEqual({ lat: 42.7004, lng: -74.9241 });
+  });
+
+  it('is null without ?debug=true, even if lat/lng are present', () => {
+    window.history.pushState(null, '', '/?lat=42.7004&lng=-74.9241');
+    expect(getDebugLocationOverride()).toBeNull();
+  });
+
+  it('is null when only one of lat/lng is present', () => {
+    window.history.pushState(null, '', '/?debug=true&lat=42.7004');
+    expect(getDebugLocationOverride()).toBeNull();
+
+    window.history.pushState(null, '', '/?debug=true&lng=-74.9241');
+    expect(getDebugLocationOverride()).toBeNull();
+  });
+
+  it('is null when lat or lng do not parse to a finite number', () => {
+    window.history.pushState(null, '', '/?debug=true&lat=notanumber&lng=-74.9241');
+    expect(getDebugLocationOverride()).toBeNull();
+  });
+
+  it('is null when debug=true but no lat/lng are present', () => {
+    window.history.pushState(null, '', '/?debug=true');
+    expect(getDebugLocationOverride()).toBeNull();
   });
 });

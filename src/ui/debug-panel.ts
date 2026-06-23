@@ -1,4 +1,4 @@
-import type { ProviderDebugMeta } from '../data/provider';
+import type { LatLng, ProviderDebugMeta } from '../data/provider';
 import type { DebugTrace } from '../debug';
 import { money } from './copy';
 
@@ -7,7 +7,11 @@ import { money } from './copy';
  * cards. Only ever called when ?debug=true (see main.ts) — display-only,
  * changes nothing about the real decision.
  */
-export function debugPanelHtml(trace: DebugTrace, providerMeta: ProviderDebugMeta | null): string {
+export function debugPanelHtml(
+  trace: DebugTrace,
+  providerMeta: ProviderDebugMeta | null,
+  locationOverride: LatLng | null = null,
+): string {
   const queryRows = (providerMeta?.queries ?? [])
     .map(
       (q) => `
@@ -38,9 +42,14 @@ export function debugPanelHtml(trace: DebugTrace, providerMeta: ProviderDebugMet
     })
     .join('');
 
+  const overrideWarning = locationOverride
+    ? `<p class="debug-warn">⚠️ Location override: ${locationOverride.lat}, ${locationOverride.lng}</p>`
+    : '';
+
   return `
     <section class="card debug-panel">
       <h2>Debug trace <span class="muted">(?debug=true)</span></h2>
+      ${overrideWarning}
       <p class="muted">Grade: ${trace.grade} · Slider fraction: ${trace.sliderFraction.toFixed(3)} · Generated: ${trace.generatedAt}</p>
 
       <h3>Provider queries</h3>

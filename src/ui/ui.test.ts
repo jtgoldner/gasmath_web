@@ -236,6 +236,32 @@ describe('verdict screen', () => {
     expect(panel!.textContent).toContain('not a member');
     // Provider query info (radius + restriction mode) is surfaced.
     expect(panel!.textContent).toContain('locationRestriction');
+    // No location override was passed, so no override warning is shown.
+    expect(panel!.textContent).not.toContain('Location override');
+  });
+
+  it('shows a clear warning in the debug panel when a location override is active', async () => {
+    const candidates = await mockProvider.getCandidates({ lat: 0, lng: 0 }, SETTINGS);
+    const verdict = decide(candidates, SETTINGS, 0.5, new Date());
+    const trace = buildDebugTrace(candidates, SETTINGS, 0.5, new Date());
+
+    const root = mount();
+    renderVerdict(root, {
+      verdict,
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+      debugTrace: trace,
+      providerDebugMeta: mockProvider.getDebugMeta!(),
+      debugLocationOverride: { lat: 42.7004, lng: -74.9241 },
+    });
+
+    const warning = root.querySelector('.debug-warn');
+    expect(warning).not.toBeNull();
+    expect(warning!.textContent).toContain('Location override');
+    expect(warning!.textContent).toContain('42.7004');
+    expect(warning!.textContent).toContain('-74.9241');
   });
 
   it('collapses to one card when the closest station is also the cheapest', () => {
