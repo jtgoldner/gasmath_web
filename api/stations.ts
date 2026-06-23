@@ -119,7 +119,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           textQuery,
           includedType: 'gas_station',
           pageSize: 5,
-          locationBias: { circle },
+          // Hard cutoff, matching the main query — locationBias does NOT
+          // restrict results to the radius, which let club-brand matches
+          // hundreds of miles away into the candidate set (confirmed via
+          // ?debug=true against production, 2026-06-13). No unbounded
+          // fallback: zero club results in range is correct behavior.
+          locationRestriction: { circle },
         }),
       }),
     ),
@@ -144,9 +149,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   // DEBUG ONLY: report the real, server-side query parameters — these are the
   // ACTUAL values this deployed function used (not whatever src/config.ts
   // says), since the constants above are inlined copies that can drift.
-  // NOTE: the supplemental club query uses locationBias, which does NOT
-  // restrict results to the radius — it only biases ranking. If no matching
-  // brand exists nearby, Places can return one arbitrarily far away.
+  // Both queries use locationRestriction (a hard cutoff) as of 2026-06-13 —
+  // the supplemental club query previously used locationBias, which let
+  // club-brand matches hundreds of miles away into the candidate set.
   const meta = debug === true
     ? {
         searchRadiusMeters: SEARCH_RADIUS_M,
@@ -159,7 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           ...clubQueries.map((text) => ({
             description: `Text Search (members-only supplemental): "${text}"`,
             radiusMeters: SEARCH_RADIUS_M,
-            mode: 'locationBias' as const,
+            mode: 'locationRestriction' as const,
           })),
         ],
       }
