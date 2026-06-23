@@ -61,6 +61,7 @@ effective_cost = (gallons_needed + detour_gallons) × station_price
 - Mobile-first UI: primary use case is phone-in-hand, about to drive. Fuel slider: E left, F right, quarter-tank hash marks, continuous values.
 - Onboarding order: vehicle → warehouse clubs → Top Tier (default ON) → high octane (default OFF). All editable in Settings.
 - Launch checklist items easy to forget: Terms of Use + Privacy Policy pages (Google policy requirement), PWA manifest + icons, GA4, "Powered by Google" logo attribution, API key restriction + quota cap.
+- A `?debug=true` URL parameter activates a diagnostic panel showing all candidate stations considered by the engine, filter reasons, distances, prices, detour costs, and effective totals. Server only computes debug metadata when explicitly requested — zero cost to normal users. Use this first when investigating any "wrong result" report before touching engine logic.
 
 ## What NOT to build (MVP non-goals)
 
