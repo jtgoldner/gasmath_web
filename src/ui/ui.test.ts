@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
 import { mockProvider } from '../data/mock-provider';
+import { buildDebugTrace } from '../debug';
 import { decide } from '../engine/engine';
 import type { Candidate } from '../engine/types';
 import {
@@ -206,6 +207,35 @@ describe('verdict screen', () => {
     // Google attribution present (hard rule 6); club stations absent (hard rule 3).
     expect(root.querySelector('.attribution-logo')!.getAttribute('alt')).toBe('Powered by Google');
     expect(root.textContent).not.toContain('Costco');
+
+    // Debug panel is absent by default — display-only, opt-in via ?debug=true.
+    expect(root.querySelector('.debug-panel')).toBeNull();
+  });
+
+  it('renders the debug panel only when a debug trace is explicitly supplied', async () => {
+    const candidates = await mockProvider.getCandidates({ lat: 0, lng: 0 }, SETTINGS);
+    const verdict = decide(candidates, SETTINGS, 0.5, new Date());
+    const trace = buildDebugTrace(candidates, SETTINGS, 0.5, new Date());
+
+    const root = mount();
+    renderVerdict(root, {
+      verdict,
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+      debugTrace: trace,
+      providerDebugMeta: mockProvider.getDebugMeta!(),
+    });
+
+    const panel = root.querySelector('.debug-panel');
+    expect(panel).not.toBeNull();
+    // Every mock candidate is listed, including ones the real verdict excluded
+    // (e.g. the non-member club stations), with a reason shown.
+    expect(panel!.textContent).toContain("Sam's Club");
+    expect(panel!.textContent).toContain('not a member');
+    // Provider query info (radius + restriction mode) is surfaced.
+    expect(panel!.textContent).toContain('locationRestriction');
   });
 
   it('collapses to one card when the closest station is also the cheapest', () => {

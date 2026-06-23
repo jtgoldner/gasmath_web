@@ -1,4 +1,5 @@
 import type { WireStation } from '../../api/stations';
+import { MAX_ROUTING_CANDIDATES } from '../config';
 import {
   filterCandidates,
   selectedGrade,
@@ -7,7 +8,7 @@ import {
 } from '../engine/engine';
 import type { Candidate, ClubBrand, PriceQuote, Station } from '../engine/types';
 import type { AppSettings } from '../storage';
-import type { LatLng, StationProvider } from './provider';
+import type { DebugQueryInfo, LatLng, ProviderDebugMeta, StationProvider } from './provider';
 import { isTopTierBrand } from './top-tier';
 
 /**
@@ -71,16 +72,26 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return resp.json() as Promise<T>;
 }
 
+// DEBUG ONLY: snapshot of the most recent getCandidates() call. Module-level
+// state confined to this file; never read by engine logic, only by the debug
+// panel via getDebugMeta(). null until a debug=true call completes.
+let lastDebugMeta: ProviderDebugMeta | null = null;
+
 export const liveProvider: StationProvider = {
   async getCandidates(
     location: LatLng,
     settings: AppSettings,
     relax: Relaxations = {},
+    debug = false,
   ): Promise<Candidate[]> {
-    const { stations } = await postJson<{ stations: WireStation[] }>('/api/stations', {
+    const { stations, meta: stationsMeta } = await postJson<{
+      stations: WireStation[];
+      meta?: { searchRadiusMeters: number; queries: DebugQueryInfo[] };
+    }>('/api/stations', {
       lat: location.lat,
       lng: location.lng,
       clubs: settings.clubMemberships,
+      debug,
     });
 
     const entries = stations.map((w) => {
@@ -90,6 +101,7 @@ export const liveProvider: StationProvider = {
         station,
         distanceMiles: straightLineMiles * CIRCUITY,
         roundTripExtraMiles: 2 * straightLineMiles * CIRCUITY,
+        distanceSource: 'estimated',
       };
       return { station, loc: { lat: w.lat, lng: w.lng }, straightLineMiles, estimate };
     });
@@ -98,7 +110,19 @@ export const liveProvider: StationProvider = {
     const eligible = filterCandidates(provisional, settings, new Date(), relax);
     // Nothing eligible: return estimates so the engine can compute which
     // relaxation to offer. No verdict is ever rendered from these.
-    if (eligible.length === 0) return provisional;
+    if (eligible.length === 0) {
+      if (debug) {
+        lastDebugMeta = {
+          queries: stationsMeta?.queries ?? [],
+          routingDescription:
+            'No eligible candidates after filtering — no routing call was made; all distances below are straight-line estimates.',
+          maxRoutingCandidates: MAX_ROUTING_CANDIDATES,
+          routedCount: 0,
+          estimatedCount: provisional.length,
+        };
+      }
+      return provisional;
+    }
 
     const eligibleIds = new Set(eligible.map((c) => c.station.placeId));
     const seeds = selectRoutingCandidates(
@@ -118,10 +142,26 @@ export const liveProvider: StationProvider = {
     seeds.forEach((seed, i) => {
       const d = distancesMiles[i];
       if (typeof d !== 'number') return; // unroutable → excluded (never guess)
-      routed.push({ station: seed.station, distanceMiles: d, roundTripExtraMiles: 2 * d });
+      routed.push({ station: seed.station, distanceMiles: d, roundTripExtraMiles: 2 * d, distanceSource: 'routed' });
     });
 
     const ineligible = provisional.filter((c) => !eligibleIds.has(c.station.placeId));
+
+    if (debug) {
+      lastDebugMeta = {
+        queries: stationsMeta?.queries ?? [],
+        routingDescription:
+          'Only eligible candidates (filtered by club/Top Tier/grade/staleness) are routed, capped at MAX_ROUTING_CANDIDATES (nearest + cheapest fill the cap). Routed candidates get a real OpenRouteService driving distance; everyone else (ineligible, or cut by the cap) keeps a haversine straight-line × 1.3 circuity estimate.',
+        maxRoutingCandidates: MAX_ROUTING_CANDIDATES,
+        routedCount: routed.length,
+        estimatedCount: ineligible.length,
+      };
+    }
+
     return [...routed, ...ineligible];
+  },
+
+  getDebugMeta(): ProviderDebugMeta | null {
+    return lastDebugMeta;
   },
 };

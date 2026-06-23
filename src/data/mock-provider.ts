@@ -1,5 +1,5 @@
 import type { Candidate, ClubBrand, PriceQuote } from '../engine/types';
-import type { StationProvider } from './provider';
+import type { ProviderDebugMeta, StationProvider } from './provider';
 
 /**
  * Deterministic mock so the full flow is demoable with no API keys.
@@ -51,11 +51,25 @@ function toCandidate(spec: MockSpec, index: number): Candidate {
     distanceMiles: spec.distanceMiles,
     // MVP has no destination input: the detour is simply there-and-back.
     roundTripExtraMiles: 2 * spec.distanceMiles,
+    distanceSource: 'mock',
   };
 }
+
+const MOCK_DEBUG_META: ProviderDebugMeta = {
+  queries: [
+    { description: 'Mock data — no real Places query was issued', radiusMeters: 0, mode: 'locationRestriction' },
+  ],
+  routingDescription: 'Mock data — distances are static fixtures, no ORS call was made.',
+  maxRoutingCandidates: 0,
+  routedCount: 0,
+  estimatedCount: 0,
+};
 
 export const mockProvider: StationProvider = {
   async getCandidates() {
     return SPECS.map(toCandidate);
+  },
+  getDebugMeta(): ProviderDebugMeta {
+    return MOCK_DEBUG_META;
   },
 };

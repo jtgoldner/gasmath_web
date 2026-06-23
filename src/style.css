@@ -584,3 +584,40 @@ input[type='checkbox'] {
 .legal-footer a:hover {
   text-decoration: underline;
 }
+
+/* ---- Debug panel (developer-only, ?debug=true, never shown otherwise) ---- */
+.debug-panel {
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 0.82rem;
+}
+
+.debug-panel h3 {
+  font-size: 0.9rem;
+  margin: 14px 0 6px;
+  color: var(--ink);
+}
+
+.debug-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.debug-table th,
+.debug-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 5px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.debug-warn {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.debug-ok {
+  color: var(--accent);
+  font-weight: 600;
+}

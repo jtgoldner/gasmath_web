@@ -1,7 +1,10 @@
+import type { ProviderDebugMeta } from '../data/provider';
+import type { DebugTrace } from '../debug';
 import { selectedGrade, type Verdict } from '../engine/engine';
 import type { Candidate, FuelGrade } from '../engine/types';
 import type { AppSettings } from '../storage';
 import { COPY, money } from './copy';
+import { debugPanelHtml } from './debug-panel';
 import { backButton, headerHtml } from './header';
 
 export interface VerdictProps {
@@ -10,6 +13,9 @@ export interface VerdictProps {
   onRelaxTopTier: () => void;
   onRelaxStaleness: () => void;
   onBack: () => void;
+  /** DEBUG ONLY: present only when ?debug=true (see main.ts). Renders below the cards. */
+  debugTrace?: DebugTrace;
+  providerDebugMeta?: ProviderDebugMeta | null;
 }
 
 /**
@@ -121,10 +127,17 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
       break;
   }
 
+  // DEBUG ONLY: rendered below the cards, only when main.ts passes a trace
+  // (i.e. only when ?debug=true was on the URL). No effect otherwise.
+  const debugSection = props.debugTrace
+    ? debugPanelHtml(props.debugTrace, props.providerDebugMeta ?? null)
+    : '';
+
   root.innerHTML = `
     <main class="screen">
       ${headerHtml({ left: backButton })}
       ${body}
+      ${debugSection}
       <!-- Low-emphasis support link — verdict screen only, not a competing CTA. -->
       <p class="coffee-note">${c.coffeePrefix}<a href="${c.coffeeUrl}" target="_blank" rel="noopener noreferrer">${c.coffeeLink}</a>${c.coffeeSuffix}</p>
       <!-- Legal requirement (hard rule 6, PRD §7): Google attribution must

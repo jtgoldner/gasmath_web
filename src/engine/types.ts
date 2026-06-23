@@ -33,6 +33,14 @@ export interface Candidate {
    * input, so the data layer sets this to 2 × distanceMiles (there and back).
    */
   roundTripExtraMiles: number;
+  /**
+   * DEBUG ONLY (not used by engine logic): where distanceMiles came from.
+   * 'routed' = real OpenRouteService driving distance; 'estimated' = haversine
+   * straight-line × circuity factor (never backs a verdict, only relax offers);
+   * 'mock' = deterministic dev data. Optional and ignored everywhere except
+   * the debug panel.
+   */
+  distanceSource?: 'routed' | 'estimated' | 'mock';
 }
 
 export interface VehicleProfile {

@@ -1,5 +1,6 @@
 import './style.css';
 import { initAnalytics, track } from './analytics';
+import { buildDebugTrace, isDebugMode } from './debug';
 import { liveProvider } from './data/live-provider';
 import { mockProvider } from './data/mock-provider';
 import type { LatLng, StationProvider } from './data/provider';
@@ -27,6 +28,11 @@ const app = document.querySelector<HTMLDivElement>('#app')!;
 // exercise the live proxies locally. Production always uses live data.
 const provider: StationProvider =
   import.meta.env.DEV && import.meta.env.VITE_LIVE !== '1' ? mockProvider : liveProvider;
+
+// DEBUG ONLY: ?debug=true reveals a raw engine/provider trace below the
+// verdict cards (see src/debug.ts, src/ui/debug-panel.ts). Off by default;
+// no effect on the real decision either way.
+const DEBUG = isDebugMode();
 
 let settings: AppSettings | null = loadSettings();
 
@@ -117,7 +123,7 @@ async function startSearch(fraction: number): Promise<void> {
   track('search_started');
   const location = await locate();
   try {
-    const candidates = await provider.getCandidates(location, settings!, {});
+    const candidates = await provider.getCandidates(location, settings!, {}, DEBUG);
     session = { location, candidates, fraction, relax: {} };
     showVerdict();
   } catch {
@@ -131,7 +137,7 @@ async function acceptRelax(patch: Relaxations): Promise<void> {
   track('relax_accepted', { type: patch.topTier ? 'top_tier' : 'staleness' });
   showLoading();
   try {
-    session.candidates = await provider.getCandidates(session.location, settings, session.relax);
+    session.candidates = await provider.getCandidates(session.location, settings, session.relax, DEBUG);
     showVerdict();
   } catch {
     showError();
@@ -155,6 +161,12 @@ function showVerdict(): void {
     onRelaxTopTier: () => void acceptRelax({ topTier: true }),
     onRelaxStaleness: () => void acceptRelax({ staleness: true }),
     onBack: showHome,
+    ...(DEBUG
+      ? {
+          debugTrace: buildDebugTrace(session.candidates, settings, session.fraction, new Date(), session.relax),
+          providerDebugMeta: provider.getDebugMeta?.() ?? null,
+        }
+      : {}),
   });
 }
 

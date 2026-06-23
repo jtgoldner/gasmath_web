@@ -79,7 +79,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  const { lat, lng, clubs } = (req.body ?? {}) as { lat?: unknown; lng?: unknown; clubs?: unknown };
+  const { lat, lng, clubs, debug } = (req.body ?? {}) as {
+    lat?: unknown;
+    lng?: unknown;
+    clubs?: unknown;
+    debug?: unknown;
+  };
   if (typeof lat !== 'number' || typeof lng !== 'number' || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
     res.status(400).json({ error: 'lat and lng are required numbers' });
     return;
@@ -135,5 +140,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   res.setHeader('Cache-Control', 'no-store');
-  res.status(200).json({ stations: [...stations.values()] });
+
+  // DEBUG ONLY: report the real, server-side query parameters — these are the
+  // ACTUAL values this deployed function used (not whatever src/config.ts
+  // says), since the constants above are inlined copies that can drift.
+  // NOTE: the supplemental club query uses locationBias, which does NOT
+  // restrict results to the radius — it only biases ranking. If no matching
+  // brand exists nearby, Places can return one arbitrarily far away.
+  const meta = debug === true
+    ? {
+        searchRadiusMeters: SEARCH_RADIUS_M,
+        queries: [
+          {
+            description: 'Nearby Search: gas_station (main candidate set)',
+            radiusMeters: SEARCH_RADIUS_M,
+            mode: 'locationRestriction' as const,
+          },
+          ...clubQueries.map((text) => ({
+            description: `Text Search (members-only supplemental): "${text}"`,
+            radiusMeters: SEARCH_RADIUS_M,
+            mode: 'locationBias' as const,
+          })),
+        ],
+      }
+    : undefined;
+
+  res.status(200).json({ stations: [...stations.values()], ...(meta ? { meta } : {}) });
 }
