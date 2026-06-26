@@ -465,6 +465,30 @@ input[type='checkbox'] {
   color: var(--ink);
 }
 
+/* Low-emphasis secondary action on each card — compact, never competes with
+   the primary verdict numbers above it. */
+.copy-address-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.copy-address-btn:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.copy-address-btn.copied {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* Low-emphasis support link below the verdict cards — muted, not a CTA. */
 .coffee-note {
   margin: 4px 0 0;

@@ -197,6 +197,7 @@ describe('verdict screen', () => {
     expect(cards[0].textContent).toContain('Shell — Main St');
     expect(cards[0].querySelector('.station-address')!.textContent).toContain('101 Main St');
     expect(cards[0].classList.contains('verdict-card-best')).toBe(false);
+    expect(cards[0].querySelector('[data-act="copy-address"]')).not.toBeNull();
 
     // Card 2 = cheapest (Mobil), emphasized with the Best Value badge + savings.
     expect(cards[1].textContent).toContain('Mobil — Riverside');
@@ -204,6 +205,7 @@ describe('verdict screen', () => {
     expect(cards[1].classList.contains('verdict-card-best')).toBe(true);
     expect(cards[1].textContent).toContain('Best Value');
     expect(cards[1].textContent).toContain("You'll save");
+    expect(cards[1].querySelector('[data-act="copy-address"]')).not.toBeNull();
 
     // Google attribution present (hard rule 6); club stations absent (hard rule 3).
     expect(root.querySelector('.attribution-logo')!.getAttribute('alt')).toBe('Powered by Google');
@@ -211,6 +213,41 @@ describe('verdict screen', () => {
 
     // Debug panel is absent by default — display-only, opt-in via ?debug=true.
     expect(root.querySelector('.debug-panel')).toBeNull();
+  });
+
+  it('copies "Name, Address" to the clipboard and shows a temporary "Copied!" confirmation', async () => {
+    vi.useFakeTimers();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+
+    const candidates = await mockProvider.getCandidates({ lat: 0, lng: 0 }, SETTINGS);
+    const verdict = decide(candidates, SETTINGS, 0.5, new Date());
+    const root = mount();
+    renderVerdict(root, {
+      verdict,
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+    });
+
+    const btn = root.querySelectorAll<HTMLButtonElement>('[data-act="copy-address"]')[0];
+    const original = btn.textContent;
+    expect(original).toBe('Copy address');
+    expect(btn.dataset.copyText).toBe('Shell — Main St, 101 Main St, Springfield');
+
+    btn.click();
+    expect(writeText).toHaveBeenCalledWith('Shell — Main St, 101 Main St, Springfield');
+
+    await Promise.resolve(); // flush the writeText() resolution microtask
+    expect(btn.textContent).toBe('Copied!');
+    expect(btn.classList.contains('copied')).toBe(true);
+
+    vi.advanceTimersByTime(2000);
+    expect(btn.textContent).toBe(original);
+    expect(btn.classList.contains('copied')).toBe(false);
+
+    vi.useRealTimers();
   });
 
   it('renders the debug panel only when a debug trace is explicitly supplied', async () => {

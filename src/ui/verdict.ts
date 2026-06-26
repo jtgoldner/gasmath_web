@@ -22,6 +22,11 @@ export interface VerdictProps {
   debugVehicle?: DebugVehicleInfo | null;
 }
 
+/** Escapes a value for safe placement inside an HTML attribute. */
+function escapeAttr(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
 /**
  * One card per station, used to build the closest-vs-cheapest comparison.
  * "Estimated cost" is the engine's effective cost (gallons needed × price, plus
@@ -44,6 +49,9 @@ function stationCardHtml(opts: {
   const badge = opts.badge ? `<span class="best-badge">${opts.badge}</span>` : '';
   const savingsLine =
     opts.savings !== undefined ? `<p class="savings">${c.saveByDriving(money(opts.savings))}</p>` : '';
+  // "Station Name, Street Address, City, State ZIP" — the address field is
+  // already Google's formattedAddress (street, city, state zip[, country]).
+  const copyText = s.address ? `${s.name}, ${s.address}` : s.name;
 
   return `
     <section class="verdict-card${opts.best ? ' verdict-card-best' : ''}">
@@ -63,6 +71,7 @@ function stationCardHtml(opts: {
         <span class="est-num">${money(opts.cost)}</span>
       </div>
       ${savingsLine}
+      <button class="copy-address-btn" data-act="copy-address" data-copy-text="${escapeAttr(copyText)}">${c.copyAddress}</button>
       <!-- FUTURE(map): insert a small Google Map of this station and a
            "Get Directions" link here. The map MUST be a Google Map (PRD §7).
            Not built yet — placeholder for a later pass. -->
@@ -173,4 +182,27 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
   root.querySelector('[data-act="back"]')!.addEventListener('click', props.onBack);
   root.querySelector('[data-act="relax-top-tier"]')?.addEventListener('click', props.onRelaxTopTier);
   root.querySelector('[data-act="relax-staleness"]')?.addEventListener('click', props.onRelaxStaleness);
+
+  // Copy address: inline button-text confirmation only — no toast, no modal.
+  root.querySelectorAll<HTMLButtonElement>('[data-act="copy-address"]').forEach((btn) => {
+    const original = btn.textContent ?? c.copyAddress;
+    let revertTimer: ReturnType<typeof setTimeout> | undefined;
+    btn.addEventListener('click', () => {
+      const text = btn.dataset.copyText ?? '';
+      navigator.clipboard
+        ?.writeText(text)
+        .then(() => {
+          clearTimeout(revertTimer);
+          btn.textContent = c.copied;
+          btn.classList.add('copied');
+          revertTimer = setTimeout(() => {
+            btn.textContent = original;
+            btn.classList.remove('copied');
+          }, 2000);
+        })
+        .catch(() => {
+          /* clipboard unavailable/denied — leave the button as-is */
+        });
+    });
+  });
 }

@@ -65,6 +65,8 @@ export const COPY = {
     coffeeLink: 'buy me one',
     coffeeSuffix: '?',
     coffeeUrl: 'https://buymeacoffee.com/jonathangoldner',
+    copyAddress: 'Copy address',
+    copied: 'Copied!',
   },
 
   settings: {
