@@ -6,8 +6,11 @@ import { mockProvider } from './data/mock-provider';
 import type { LatLng, StationProvider } from './data/provider';
 import { decide, type Relaxations } from './engine/engine';
 import type { Candidate } from './engine/types';
+import { isUserInNewJersey } from './location';
 import {
+  dismissNjBanner,
   isHybridNoticeHidden,
+  isNjBannerDismissed,
   loadSettings,
   markHybridNoticeSeen,
   saveSettings,
@@ -163,12 +166,19 @@ function showVerdict(): void {
       ? { winner_is_nearest: verdict.winnerIsNearest, savings: Math.round(verdict.savings) }
       : {}),
   });
+  // One-time NJ self-serve-gas note: state inferred from address data already
+  // fetched for this search (falls back to a bounding box — see location.ts).
+  // Purely informational; does not affect the verdict above in any way.
+  const showNjBanner = !isNjBannerDismissed() && isUserInNewJersey(session.location, session.candidates);
+
   renderVerdict(app, {
     verdict,
     settings,
     onRelaxTopTier: () => void acceptRelax({ topTier: true }),
     onRelaxStaleness: () => void acceptRelax({ staleness: true }),
     onBack: showHome,
+    showNjBanner,
+    onDismissNjBanner: dismissNjBanner,
     ...(DEBUG
       ? {
           debugTrace: buildDebugTrace(session.candidates, settings, session.fraction, new Date(), session.relax),

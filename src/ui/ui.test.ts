@@ -6,7 +6,9 @@ import { buildDebugTrace, buildDebugVehicleInfo } from '../debug';
 import { decide } from '../engine/engine';
 import type { Candidate } from '../engine/types';
 import {
+  dismissNjBanner,
   isHybridNoticeHidden,
+  isNjBannerDismissed,
   loadSettings,
   markHybridNoticeSeen,
   saveSettings,
@@ -52,6 +54,13 @@ describe('storage', () => {
     markHybridNoticeSeen(seenAt);
     expect(isHybridNoticeHidden(new Date(seenAt.getTime() + 23 * 3_600_000))).toBe(true);
     expect(isHybridNoticeHidden(new Date(seenAt.getTime() + 25 * 3_600_000))).toBe(false);
+  });
+
+  it('permanently dismisses the NJ banner once, with no time-based re-arming', () => {
+    localStorage.clear();
+    expect(isNjBannerDismissed()).toBe(false);
+    dismissNjBanner();
+    expect(isNjBannerDismissed()).toBe(true);
   });
 });
 
@@ -213,6 +222,49 @@ describe('verdict screen', () => {
 
     // Debug panel is absent by default — display-only, opt-in via ?debug=true.
     expect(root.querySelector('.debug-panel')).toBeNull();
+    // NJ banner is absent unless explicitly requested.
+    expect(root.querySelector('.nj-banner')).toBeNull();
+  });
+
+  it('shows the NJ banner only when requested, and dismissing it (either control) removes it and persists', async () => {
+    const candidates = await mockProvider.getCandidates({ lat: 0, lng: 0 }, SETTINGS);
+    const verdict = decide(candidates, SETTINGS, 0.5, new Date());
+
+    // "Got it" dismisses.
+    const rootA = mount();
+    const onDismissA = vi.fn();
+    renderVerdict(rootA, {
+      verdict,
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+      showNjBanner: true,
+      onDismissNjBanner: onDismissA,
+    });
+    const banner = rootA.querySelector('.nj-banner')!;
+    expect(banner).not.toBeNull();
+    expect(banner.textContent).toContain('pump your own gas');
+    click(rootA, '[data-act="nj-banner-dismiss"]');
+    expect(rootA.querySelector('.nj-banner')).toBeNull();
+    expect(onDismissA).toHaveBeenCalledTimes(1);
+
+    // "×" close also dismisses, and does not disturb the verdict cards.
+    const rootB = mount();
+    const onDismissB = vi.fn();
+    renderVerdict(rootB, {
+      verdict,
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+      showNjBanner: true,
+      onDismissNjBanner: onDismissB,
+    });
+    click(rootB, '[data-act="nj-banner-close"]');
+    expect(rootB.querySelector('.nj-banner')).toBeNull();
+    expect(onDismissB).toHaveBeenCalledTimes(1);
+    expect(rootB.querySelectorAll('.verdict-card')).toHaveLength(2);
   });
 
   it('copies "Name, Address" to the clipboard and shows a temporary "Copied!" confirmation', async () => {

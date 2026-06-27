@@ -20,6 +20,9 @@ export interface VerdictProps {
   debugLocationOverride?: LatLng | null;
   /** DEBUG ONLY: vehicle identity + EPA MPG/tank used for this session's calculation. */
   debugVehicle?: DebugVehicleInfo | null;
+  /** One-time NJ self-serve-gas info banner; true only when in NJ and not yet dismissed. */
+  showNjBanner?: boolean;
+  onDismissNjBanner?: () => void;
 }
 
 /** Escapes a value for safe placement inside an HTML attribute. */
@@ -151,9 +154,24 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
       )
     : '';
 
+  // One-time NJ self-serve-gas note. Purely informational and non-blocking —
+  // it never gates or alters the cards/body above. Dismissal is persisted via
+  // onDismissNjBanner (main.ts), so it never reappears once closed.
+  const njBanner = props.showNjBanner
+    ? `
+      <div class="nj-banner" data-act="nj-banner">
+        <p>${COPY.njBanner.message}</p>
+        <div class="nj-banner-actions">
+          <button class="nj-banner-dismiss" data-act="nj-banner-dismiss">${COPY.njBanner.dismiss}</button>
+          <button class="nj-banner-close" data-act="nj-banner-close" aria-label="${COPY.njBanner.closeAriaLabel}">&times;</button>
+        </div>
+      </div>`
+    : '';
+
   root.innerHTML = `
     <main class="screen">
       ${headerHtml({ left: backButton })}
+      ${njBanner}
       ${body}
       ${debugSection}
       <!-- Low-emphasis support link — verdict screen only, not a competing CTA. -->
@@ -182,6 +200,13 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
   root.querySelector('[data-act="back"]')!.addEventListener('click', props.onBack);
   root.querySelector('[data-act="relax-top-tier"]')?.addEventListener('click', props.onRelaxTopTier);
   root.querySelector('[data-act="relax-staleness"]')?.addEventListener('click', props.onRelaxStaleness);
+
+  const dismissNjBanner = () => {
+    root.querySelector('[data-act="nj-banner"]')?.remove();
+    props.onDismissNjBanner?.();
+  };
+  root.querySelector('[data-act="nj-banner-dismiss"]')?.addEventListener('click', dismissNjBanner);
+  root.querySelector('[data-act="nj-banner-close"]')?.addEventListener('click', dismissNjBanner);
 
   // Copy address: inline button-text confirmation only — no toast, no modal.
   root.querySelectorAll<HTMLButtonElement>('[data-act="copy-address"]').forEach((btn) => {

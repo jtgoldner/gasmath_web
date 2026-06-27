@@ -44,3 +44,14 @@ export function isHybridNoticeHidden(now: Date = new Date()): boolean {
   if (!Number.isFinite(seen) || seen === 0) return false;
   return now.getTime() - seen < HYBRID_NOTICE_HIDE_MS;
 }
+
+const NJ_BANNER_DISMISSED_KEY = 'gasmath.njSelfServeBannerDismissed.v1';
+
+/** One-time NJ self-serve gas law banner — true once the user has dismissed it. */
+export function isNjBannerDismissed(): boolean {
+  return localStorage.getItem(NJ_BANNER_DISMISSED_KEY) === '1';
+}
+
+export function dismissNjBanner(): void {
+  localStorage.setItem(NJ_BANNER_DISMISSED_KEY, '1');
+}

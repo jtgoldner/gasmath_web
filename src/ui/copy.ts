@@ -69,6 +69,13 @@ export const COPY = {
     copied: 'Copied!',
   },
 
+  njBanner: {
+    message:
+      "Heads up! As of April 2026, New Jersey lets you pump your own gas. You can still opt for full-service if you'd rather not.",
+    dismiss: 'Got it',
+    closeAriaLabel: 'Dismiss',
+  },
+
   settings: {
     title: 'Settings',
     vehicle: 'Your vehicle',
