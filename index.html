@@ -51,10 +51,13 @@
     <!-- Persistent legal footer (outside #app so SPA re-renders don't remove it).
          Publicly accessible Terms + Privacy are a Google Maps Platform requirement. -->
     <footer class="legal-footer">
+      <span class="legal-copyright">© <span id="footer-year">2026</span> Jonathan Goldner</span>
+      <span aria-hidden="true">·</span>
       <a href="/privacy.html">Privacy</a>
       <span aria-hidden="true">·</span>
       <a href="/terms.html">Terms</a>
     </footer>
+    <script>document.getElementById('footer-year').textContent = new Date().getFullYear();</script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
