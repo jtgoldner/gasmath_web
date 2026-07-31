@@ -14,11 +14,34 @@ export interface DebugQueryInfo {
   radiusMeters: number;
   /** Google's two location-filter modes: restriction is a hard cutoff, bias is not. */
   mode: 'locationRestriction' | 'locationBias';
+  /** Raw places Google returned for this query, before any GasMath filtering. */
+  rawResultCount: number;
+  /** How many of those survived with a usable regular/premium price. */
+  usableCount: number;
+  /** Members-only supplemental queries only: raw place names, exactly as returned. */
+  rawPlaceNames?: string[];
+  /** Set when the upstream query failed (non-2xx) and degraded to zero results. */
+  upstreamStatus?: number;
+}
+
+/**
+ * A place Places returned that never reached the candidate set — dropped at the
+ * proxy for lack of usable price data. Distinct from a candidate the engine
+ * excluded: these never got far enough to be excluded.
+ */
+export interface DebugDroppedStation {
+  name: string;
+  address?: string;
+  /** Straight-line estimate; null when Places returned no location for the place. */
+  distanceMiles: number | null;
+  reason: string;
 }
 
 /** Diagnostic snapshot of the last getCandidates() call — debug panel only, never used by logic. */
 export interface ProviderDebugMeta {
   queries: DebugQueryInfo[];
+  /** Places results dropped before the candidate set was built. */
+  droppedStations: DebugDroppedStation[];
   /** How distances were obtained: real routing vs. estimate, and the routing cap. */
   routingDescription: string;
   maxRoutingCandidates: number;

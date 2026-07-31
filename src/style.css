@@ -704,3 +704,10 @@ input[type='checkbox'] {
   color: var(--accent);
   font-weight: 600;
 }
+
+/* Rows for places dropped before the candidate set — dimmed so they read as
+   context rather than as candidates the engine actually considered. */
+.debug-dropped td {
+  color: var(--muted);
+  font-style: italic;
+}

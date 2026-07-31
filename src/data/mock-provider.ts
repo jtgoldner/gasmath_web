@@ -57,8 +57,15 @@ function toCandidate(spec: MockSpec, index: number): Candidate {
 
 const MOCK_DEBUG_META: ProviderDebugMeta = {
   queries: [
-    { description: 'Mock data — no real Places query was issued', radiusMeters: 0, mode: 'locationRestriction' },
+    {
+      description: 'Mock data — no real Places query was issued',
+      radiusMeters: 0,
+      mode: 'locationRestriction',
+      rawResultCount: SPECS.length,
+      usableCount: SPECS.length,
+    },
   ],
+  droppedStations: [],
   routingDescription: 'Mock data — distances are static fixtures, no ORS call was made.',
   maxRoutingCandidates: 0,
   routedCount: 0,

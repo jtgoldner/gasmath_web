@@ -8,7 +8,13 @@ import {
 } from '../engine/engine';
 import type { Candidate, ClubBrand, PriceQuote, Station } from '../engine/types';
 import type { AppSettings } from '../storage';
-import type { DebugQueryInfo, LatLng, ProviderDebugMeta, StationProvider } from './provider';
+import type {
+  DebugDroppedStation,
+  DebugQueryInfo,
+  LatLng,
+  ProviderDebugMeta,
+  StationProvider,
+} from './provider';
 import { isTopTierBrand } from './top-tier';
 
 /**
@@ -77,6 +83,35 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 // panel via getDebugMeta(). null until a debug=true call completes.
 let lastDebugMeta: ProviderDebugMeta | null = null;
 
+/** Wire shape of the proxy's debug metadata (see api/stations.ts). */
+interface StationsWireMeta {
+  searchRadiusMeters: number;
+  queries: DebugQueryInfo[];
+  droppedPlaces: {
+    name: string;
+    address?: string;
+    lat: number | null;
+    lng: number | null;
+    reason: string;
+  }[];
+}
+
+/**
+ * DEBUG ONLY: gives the proxy's dropped places the same straight-line distance
+ * treatment as an ineligible candidate, so they can sit in the same table.
+ */
+function droppedStationsFrom(meta: StationsWireMeta | undefined, origin: LatLng): DebugDroppedStation[] {
+  return (meta?.droppedPlaces ?? []).map((d) => ({
+    name: d.name,
+    address: d.address,
+    distanceMiles:
+      d.lat !== null && d.lng !== null
+        ? haversineMiles(origin, { lat: d.lat, lng: d.lng }) * CIRCUITY
+        : null,
+    reason: d.reason,
+  }));
+}
+
 export const liveProvider: StationProvider = {
   async getCandidates(
     location: LatLng,
@@ -86,7 +121,7 @@ export const liveProvider: StationProvider = {
   ): Promise<Candidate[]> {
     const { stations, meta: stationsMeta } = await postJson<{
       stations: WireStation[];
-      meta?: { searchRadiusMeters: number; queries: DebugQueryInfo[] };
+      meta?: StationsWireMeta;
     }>('/api/stations', {
       lat: location.lat,
       lng: location.lng,
@@ -114,6 +149,7 @@ export const liveProvider: StationProvider = {
       if (debug) {
         lastDebugMeta = {
           queries: stationsMeta?.queries ?? [],
+          droppedStations: droppedStationsFrom(stationsMeta, location),
           routingDescription:
             'No eligible candidates after filtering — no routing call was made; all distances below are straight-line estimates.',
           maxRoutingCandidates: MAX_ROUTING_CANDIDATES,
@@ -150,6 +186,7 @@ export const liveProvider: StationProvider = {
     if (debug) {
       lastDebugMeta = {
         queries: stationsMeta?.queries ?? [],
+        droppedStations: droppedStationsFrom(stationsMeta, location),
         routingDescription:
           'Only eligible candidates (filtered by club/Top Tier/grade/staleness) are routed, capped at MAX_ROUTING_CANDIDATES (nearest + cheapest fill the cap). Routed candidates get a real OpenRouteService driving distance; everyone else (ineligible, or cut by the cap) keeps a haversine straight-line × 1.3 circuity estimate.',
         maxRoutingCandidates: MAX_ROUTING_CANDIDATES,

@@ -43,29 +43,101 @@ export interface WireStation {
   prices: Partial<Record<'regular' | 'premium', WirePrice>>;
 }
 
-function toWireStations(payload: any): WireStation[] {
-  const out: WireStation[] = [];
+/**
+ * DEBUG ONLY: a place Google returned that never became a candidate. Reported
+ * so the debug panel can distinguish "Places returned nothing" from "Places
+ * returned it and we dropped it here" — the two look identical downstream.
+ */
+export interface DroppedPlace {
+  placeId: string | null;
+  name: string;
+  address?: string;
+  lat: number | null;
+  lng: number | null;
+  reason: string;
+}
+
+/**
+ * Splits one Places payload into usable wire stations and the places that were
+ * dropped (with why). The set of stations returned is exactly what the previous
+ * single-purpose converter produced — the drop reasons are new, the drops are not.
+ */
+function convertPlaces(payload: any): {
+  stations: WireStation[];
+  dropped: DroppedPlace[];
+  names: string[];
+} {
+  const stations: WireStation[] = [];
+  const dropped: DroppedPlace[] = [];
+  const names: string[] = [];
+
   for (const place of payload?.places ?? []) {
+    const name = place.displayName?.text ?? 'Gas station';
+    names.push(name);
+
+    const address = place.formattedAddress ?? undefined;
+    const drop = (reason: string) =>
+      dropped.push({
+        placeId: place.id ?? null,
+        name,
+        address,
+        lat: place.location?.latitude ?? null,
+        lng: place.location?.longitude ?? null,
+        reason,
+      });
+
+    // null = Places returned no fuelOptions field at all, which is a different
+    // failure from "returned fuelOptions with nothing we can use".
+    const fuelPrices: any[] | null = place.fuelOptions?.fuelPrices ?? null;
     const prices: WireStation['prices'] = {};
-    for (const fp of place.fuelOptions?.fuelPrices ?? []) {
-      const grade = GRADE_MAP[fp.type];
-      if (!grade || !fp.updateTime || fp.price?.units == null) continue;
+    const seenTypes: string[] = [];
+    let sawUnusableGrade = false;
+
+    for (const fp of fuelPrices ?? []) {
+      if (typeof fp?.type === 'string') seenTypes.push(fp.type);
+      const grade = GRADE_MAP[fp?.type];
+      if (!grade) continue; // midgrade/diesel — out of MVP scope, not a defect
+      if (!fp.updateTime || fp.price?.units == null) {
+        sawUnusableGrade = true;
+        continue;
+      }
       const dollars = Number(fp.price.units) + (fp.price.nanos ?? 0) / 1e9;
-      if (!(dollars > 0)) continue;
+      if (!(dollars > 0)) {
+        sawUnusableGrade = true;
+        continue;
+      }
       prices[grade] = { price: dollars, updatedAt: fp.updateTime };
     }
+
     // A station with no usable price can never be recommended (hard rule 4) — drop it.
-    if (!place.id || !place.location || Object.keys(prices).length === 0) continue;
-    out.push({
+    if (!place.id) {
+      drop('no place id returned');
+      continue;
+    }
+    if (!place.location) {
+      drop('no location returned');
+      continue;
+    }
+    if (Object.keys(prices).length === 0) {
+      if (fuelPrices === null) drop('no fuelOptions data');
+      else if (fuelPrices.length === 0) drop('fuelOptions present but empty');
+      else if (sawUnusableGrade)
+        drop(`regular/premium present but unusable (no price or updateTime); types: ${seenTypes.join(', ')}`);
+      else drop(`no regular/premium price; types: ${seenTypes.join(', ')}`);
+      continue;
+    }
+
+    stations.push({
       placeId: place.id,
-      name: place.displayName?.text ?? 'Gas station',
-      address: place.formattedAddress ?? undefined,
+      name,
+      address,
       lat: place.location.latitude,
       lng: place.location.longitude,
       prices,
     });
   }
-  return out;
+
+  return { stations, dropped, names };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -136,12 +208,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
+  // Query labels stay index-aligned with `requests` above so per-query counts
+  // can be attributed to the query that produced them.
+  const queryLabels = [
+    { description: 'Nearby Search: gas_station (main candidate set)', club: false },
+    ...clubQueries.map((text) => ({
+      description: `Text Search (members-only supplemental): "${text}"`,
+      club: true,
+    })),
+  ];
+
   const stations = new Map<string, WireStation>();
-  for (const r of responses) {
-    if (!r.ok) continue; // a failed supplemental club query degrades gracefully
-    for (const s of toWireStations(await r.json())) {
+  const droppedByKey = new Map<string, DroppedPlace>();
+  const queryMeta: Record<string, unknown>[] = [];
+
+  for (let i = 0; i < responses.length; i++) {
+    const r = responses[i];
+    const label = queryLabels[i];
+    const base = {
+      description: label.description,
+      radiusMeters: SEARCH_RADIUS_M,
+      mode: 'locationRestriction' as const,
+    };
+
+    // A failed supplemental club query degrades gracefully — recorded as a
+    // zero-result query with its upstream status, not silently skipped.
+    if (!r.ok) {
+      queryMeta.push({
+        ...base,
+        rawResultCount: 0,
+        usableCount: 0,
+        upstreamStatus: r.status,
+        ...(label.club ? { rawPlaceNames: [] } : {}),
+      });
+      continue;
+    }
+
+    const { stations: converted, dropped, names } = convertPlaces(await r.json());
+    for (const s of converted) {
       if (!stations.has(s.placeId)) stations.set(s.placeId, s);
     }
+    for (const d of dropped) {
+      droppedByKey.set(d.placeId ?? `${d.name}|${d.lat}|${d.lng}`, d);
+    }
+    queryMeta.push({
+      ...base,
+      rawResultCount: names.length,
+      usableCount: converted.length,
+      ...(label.club ? { rawPlaceNames: names } : {}),
+    });
   }
 
   res.setHeader('Cache-Control', 'no-store');
@@ -152,23 +267,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   // Both queries use locationRestriction (a hard cutoff) as of 2026-06-13 —
   // the supplemental club query previously used locationBias, which let
   // club-brand matches hundreds of miles away into the candidate set.
-  const meta = debug === true
-    ? {
-        searchRadiusMeters: SEARCH_RADIUS_M,
-        queries: [
-          {
-            description: 'Nearby Search: gas_station (main candidate set)',
-            radiusMeters: SEARCH_RADIUS_M,
-            mode: 'locationRestriction' as const,
-          },
-          ...clubQueries.map((text) => ({
-            description: `Text Search (members-only supplemental): "${text}"`,
-            radiusMeters: SEARCH_RADIUS_M,
-            mode: 'locationRestriction' as const,
-          })),
-        ],
-      }
-    : undefined;
+  // rawResultCount vs usableCount separates "Google returned nothing" from
+  // "Google returned places we dropped for lack of price data".
+  const meta =
+    debug === true
+      ? {
+          searchRadiusMeters: SEARCH_RADIUS_M,
+          queries: queryMeta,
+          // A place usable from any one query is not a drop, even if another
+          // query returned it in an unusable form.
+          droppedPlaces: [...droppedByKey.values()].filter(
+            (d) => !(d.placeId && stations.has(d.placeId)),
+          ),
+        }
+      : undefined;
 
   res.status(200).json({ stations: [...stations.values()], ...(meta ? { meta } : {}) });
 }
