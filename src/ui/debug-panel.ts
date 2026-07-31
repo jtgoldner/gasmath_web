@@ -51,9 +51,13 @@ export function debugPanelHtml(
     .map(
       (q) => `
       <p class="muted">${esc(q.description)} → ${
-        q.rawPlaceNames!.length === 0
-          ? '<span class="debug-warn">no places returned</span>'
-          : `${q.rawPlaceNames!.length} raw: ${q.rawPlaceNames!.map(esc).join(', ')}`
+        q.upstreamStatus !== undefined
+          ? `<span class="debug-warn">query REJECTED by Places (HTTP ${q.upstreamStatus}) — returned no results because it failed, not because none exist</span>${
+              q.upstreamError ? `<br><span class="debug-warn">${esc(q.upstreamError)}</span>` : ''
+            }`
+          : q.rawPlaceNames!.length === 0
+            ? '<span class="debug-warn">no places returned</span>'
+            : `${q.rawPlaceNames!.length} raw: ${q.rawPlaceNames!.map(esc).join(', ')}`
       }</p>`,
     )
     .join('');

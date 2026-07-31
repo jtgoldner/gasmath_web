@@ -233,12 +233,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     // A failed supplemental club query degrades gracefully — recorded as a
     // zero-result query with its upstream status, not silently skipped.
+    // Without the upstream message, a rejected query is indistinguishable
+    // from one that legitimately found nothing.
     if (!r.ok) {
       queryMeta.push({
         ...base,
         rawResultCount: 0,
         usableCount: 0,
         upstreamStatus: r.status,
+        ...(debug === true
+          ? { upstreamError: (await r.text().catch(() => '')).slice(0, 400) }
+          : {}),
         ...(label.club ? { rawPlaceNames: [] } : {}),
       });
       continue;

@@ -22,6 +22,8 @@ export interface DebugQueryInfo {
   rawPlaceNames?: string[];
   /** Set when the upstream query failed (non-2xx) and degraded to zero results. */
   upstreamStatus?: number;
+  /** Upstream error body (truncated) — why the query was rejected, not just that it was. */
+  upstreamError?: string;
 }
 
 /**
