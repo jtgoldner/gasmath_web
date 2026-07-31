@@ -16,12 +16,61 @@ const TEXT_URL = 'https://places.googleapis.com/v1/places:searchText';
 const FIELD_MASK =
   'places.id,places.displayName,places.formattedAddress,places.location,places.fuelOptions';
 
-/** Members-only supplemental club-brand queries (PRD §6). */
+/**
+ * Members-only supplemental club-brand queries (PRD §6). These must match how
+ * Places actually NAMES these places, not the brand's marketing name — the
+ * live data calls them "Costco Gas Station", so that is what we search for.
+ * Text Search is fuzzy, so the trailing noun mainly steers ranking; the
+ * authoritative brand match is detectClub() on the returned displayName.
+ */
 const CLUB_QUERIES: Record<string, string> = {
-  costco: 'Costco Gasoline',
-  bjs: "BJ's Gas",
-  samsclub: "Sam's Club Gas",
+  costco: 'Costco Gas Station',
+  bjs: "BJ's Gas Station",
+  samsclub: "Sam's Club Gas Station",
 };
+
+const EARTH_RADIUS_M = 6_371_008.8;
+
+function haversineMeters(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+): number {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
+}
+
+/**
+ * Smallest lat/lng rectangle containing the search circle. Required because
+ * searchText's locationRestriction accepts ONLY a rectangle — passing a circle
+ * is rejected with HTTP 400 ("Unknown name \"circle\"").
+ *
+ * A rectangle circumscribing a 50 km circle reaches ~70 km at its corners, so
+ * it is a strictly weaker filter than the circle it replaces. Results from this
+ * box MUST still be post-filtered by true haversine distance (see withinRadius
+ * below) or out-of-radius club stations come straight back.
+ */
+function boundingBox(lat: number, lng: number, radiusM: number) {
+  // Derived from the same sphere haversineMeters uses, so the box provably
+  // CONTAINS the circle. A mismatched constant here would shave the edges and
+  // silently drop in-radius stations.
+  const angular = radiusM / EARTH_RADIUS_M; // radians subtended at the centre
+  const dLat = (angular * 180) / Math.PI;
+  // Exact longitude half-width of the cap. The cheaper dLat/cos(lat) runs a few
+  // metres short at the east/west edge, which would clip in-radius stations.
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+  const sinRatio = Math.sin(angular) / cosLat;
+  const dLng =
+    cosLat <= 0 || sinRatio >= 1 ? 180 : (Math.asin(sinRatio) * 180) / Math.PI;
+  return {
+    low: { latitude: Math.max(lat - dLat, -90), longitude: Math.max(lng - dLng, -180) },
+    high: { latitude: Math.min(lat + dLat, 90), longitude: Math.min(lng + dLng, 180) },
+  };
+}
 
 /** Midgrade and diesel are out of MVP scope; unknown grades are dropped. */
 const GRADE_MAP: Record<string, 'regular' | 'premium'> = {
@@ -191,12 +240,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           textQuery,
           includedType: 'gas_station',
           pageSize: 5,
-          // Hard cutoff, matching the main query — locationBias does NOT
-          // restrict results to the radius, which let club-brand matches
-          // hundreds of miles away into the candidate set (confirmed via
-          // ?debug=true against production, 2026-06-13). No unbounded
-          // fallback: zero club results in range is correct behavior.
-          locationRestriction: { circle },
+          // A rectangle, NOT a circle: searchText rejects circle here with
+          // HTTP 400, which silently killed this query entirely. The box is
+          // looser than the circle at its corners (~70 km vs 50 km), so
+          // results are post-filtered by haversine below — the circle is
+          // enforced by us even though Google will only accept the box.
+          // No unbounded fallback: zero club results in range is correct.
+          locationRestriction: { rectangle: boundingBox(lat, lng, SEARCH_RADIUS_M) },
         }),
       }),
     ),
@@ -204,6 +254,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   const responses = await Promise.all(requests);
   if (!responses[0].ok) {
+    const body = await responses[0].text().catch(() => '');
+    console.error(
+      `[stations] Nearby Search FAILED: HTTP ${responses[0].status} — ${body.slice(0, 500)}`,
+    );
     res.status(502).json({ error: `Places upstream returned ${responses[0].status}` });
     return;
   }
@@ -213,10 +267,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const queryLabels = [
     { description: 'Nearby Search: gas_station (main candidate set)', club: false },
     ...clubQueries.map((text) => ({
-      description: `Text Search (members-only supplemental): "${text}"`,
+      description: `Text Search (members-only supplemental): "${text}" — rectangle + haversine post-filter`,
       club: true,
     })),
   ];
+
+  // The circle Google enforces for Nearby Search but not for Text Search.
+  // Applied to club results so the rectangle's corners can't leak stations
+  // beyond the search radius back in.
+  const withinRadius = (p: { lat: number | null; lng: number | null }): boolean =>
+    p.lat !== null && p.lng !== null && haversineMeters({ lat, lng }, { lat: p.lat, lng: p.lng }) <= SEARCH_RADIUS_M;
 
   const stations = new Map<string, WireStation>();
   const droppedByKey = new Map<string, DroppedPlace>();
@@ -231,35 +291,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       mode: 'locationRestriction' as const,
     };
 
-    // A failed supplemental club query degrades gracefully — recorded as a
-    // zero-result query with its upstream status, not silently skipped.
-    // Without the upstream message, a rejected query is indistinguishable
-    // from one that legitimately found nothing.
+    // A failed supplemental club query still degrades gracefully for the user,
+    // but it is NEVER silent: logged server-side and reported in the debug
+    // panel. The circle-in-locationRestriction 400 went unnoticed for weeks
+    // precisely because this path used to be a bare `continue`.
     if (!r.ok) {
+      const body = await r.text().catch(() => '');
+      console.error(
+        `[stations] Places query FAILED: ${label.description} → HTTP ${r.status} — ${body.slice(0, 500)}`,
+      );
       queryMeta.push({
         ...base,
         rawResultCount: 0,
         usableCount: 0,
         upstreamStatus: r.status,
-        ...(debug === true
-          ? { upstreamError: (await r.text().catch(() => '')).slice(0, 400) }
-          : {}),
+        upstreamError: body.slice(0, 400),
         ...(label.club ? { rawPlaceNames: [] } : {}),
       });
       continue;
     }
 
     const { stations: converted, dropped, names } = convertPlaces(await r.json());
-    for (const s of converted) {
+
+    // Text Search was bounded by a rectangle, which is looser than the circle
+    // at its corners — enforce the real radius here. Nearby Search was already
+    // circle-bounded by Google, so it passes through untouched.
+    const inRadius = label.club ? converted.filter(withinRadius) : converted;
+    const droppedInRadius = label.club ? dropped.filter(withinRadius) : dropped;
+    const discarded =
+      converted.length - inRadius.length + (dropped.length - droppedInRadius.length);
+
+    for (const s of inRadius) {
       if (!stations.has(s.placeId)) stations.set(s.placeId, s);
     }
-    for (const d of dropped) {
+    for (const d of droppedInRadius) {
       droppedByKey.set(d.placeId ?? `${d.name}|${d.lat}|${d.lng}`, d);
+    }
+    if (discarded > 0) {
+      console.warn(
+        `[stations] ${label.description}: discarded ${discarded} result(s) outside ${SEARCH_RADIUS_M} m`,
+      );
     }
     queryMeta.push({
       ...base,
       rawResultCount: names.length,
-      usableCount: converted.length,
+      usableCount: inRadius.length,
+      ...(discarded > 0 ? { outOfRadiusDiscarded: discarded } : {}),
       ...(label.club ? { rawPlaceNames: names } : {}),
     });
   }

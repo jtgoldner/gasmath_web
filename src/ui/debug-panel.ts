@@ -57,7 +57,11 @@ export function debugPanelHtml(
             }`
           : q.rawPlaceNames!.length === 0
             ? '<span class="debug-warn">no places returned</span>'
-            : `${q.rawPlaceNames!.length} raw: ${q.rawPlaceNames!.map(esc).join(', ')}`
+            : `${q.rawPlaceNames!.length} raw: ${q.rawPlaceNames!.map(esc).join(', ')}${
+                q.outOfRadiusDiscarded
+                  ? ` · <span class="debug-warn">${q.outOfRadiusDiscarded} discarded outside the search radius</span>`
+                  : ''
+              }`
       }</p>`,
     )
     .join('');

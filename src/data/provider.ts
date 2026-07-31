@@ -20,6 +20,11 @@ export interface DebugQueryInfo {
   usableCount: number;
   /** Members-only supplemental queries only: raw place names, exactly as returned. */
   rawPlaceNames?: string[];
+  /**
+   * Results thrown away for falling outside SEARCH_RADIUS_M. Text Search can
+   * only be bounded by a rectangle, so its corners overshoot the circle.
+   */
+  outOfRadiusDiscarded?: number;
   /** Set when the upstream query failed (non-2xx) and degraded to zero results. */
   upstreamStatus?: number;
   /** Upstream error body (truncated) — why the query was rejected, not just that it was. */
