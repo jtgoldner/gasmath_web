@@ -14,3 +14,10 @@ export const TIE_BREAK_DOLLARS = 0.05;
  * (CLAUDE.md: don't route to all 20 stations if price alone eliminates most).
  */
 export const MAX_ROUTING_CANDIDATES = 10;
+
+/**
+ * How near a members-only club station must be to earn the "no price data"
+ * note on the verdict screen. Display-only: the note never enters the
+ * decision, so this knob cannot change which station wins.
+ */
+export const CLUB_NOTE_MAX_MILES = 10;

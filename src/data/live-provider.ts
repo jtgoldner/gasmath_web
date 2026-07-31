@@ -9,8 +9,8 @@ import {
 import type { Candidate, ClubBrand, PriceQuote, Station } from '../engine/types';
 import type { AppSettings } from '../storage';
 import type {
-  DebugDroppedStation,
   DebugQueryInfo,
+  DroppedStation,
   LatLng,
   ProviderDebugMeta,
   StationProvider,
@@ -83,27 +83,37 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 // panel via getDebugMeta(). null until a debug=true call completes.
 let lastDebugMeta: ProviderDebugMeta | null = null;
 
+/**
+ * Places the proxy dropped for lack of price data, from the most recent call.
+ * Display-only (debug panel + the club "no price data" note) — deliberately
+ * never merged into the returned candidates, so it cannot reach the engine.
+ */
+let lastDroppedStations: DroppedStation[] = [];
+
 /** Wire shape of the proxy's debug metadata (see api/stations.ts). */
 interface StationsWireMeta {
   searchRadiusMeters: number;
   queries: DebugQueryInfo[];
-  droppedPlaces: {
-    name: string;
-    address?: string;
-    lat: number | null;
-    lng: number | null;
-    reason: string;
-  }[];
+}
+
+interface WireDroppedPlace {
+  name: string;
+  address?: string;
+  lat: number | null;
+  lng: number | null;
+  reason: string;
 }
 
 /**
- * DEBUG ONLY: gives the proxy's dropped places the same straight-line distance
- * treatment as an ineligible candidate, so they can sit in the same table.
+ * Gives the proxy's dropped places the same straight-line distance treatment as
+ * an ineligible candidate. These are never routed: an ORS call on a station
+ * that can't be ranked would be wasted, so the note says "about".
  */
-function droppedStationsFrom(meta: StationsWireMeta | undefined, origin: LatLng): DebugDroppedStation[] {
-  return (meta?.droppedPlaces ?? []).map((d) => ({
+function droppedStationsFrom(places: WireDroppedPlace[] | undefined, origin: LatLng): DroppedStation[] {
+  return (places ?? []).map((d) => ({
     name: d.name,
     address: d.address,
+    club: detectClub(d.name),
     distanceMiles:
       d.lat !== null && d.lng !== null
         ? haversineMiles(origin, { lat: d.lat, lng: d.lng }) * CIRCUITY
@@ -119,8 +129,13 @@ export const liveProvider: StationProvider = {
     relax: Relaxations = {},
     debug = false,
   ): Promise<Candidate[]> {
-    const { stations, meta: stationsMeta } = await postJson<{
+    const {
+      stations,
+      droppedPlaces,
+      meta: stationsMeta,
+    } = await postJson<{
       stations: WireStation[];
+      droppedPlaces?: WireDroppedPlace[];
       meta?: StationsWireMeta;
     }>('/api/stations', {
       lat: location.lat,
@@ -128,6 +143,8 @@ export const liveProvider: StationProvider = {
       clubs: settings.clubMemberships,
       debug,
     });
+
+    lastDroppedStations = droppedStationsFrom(droppedPlaces, location);
 
     const entries = stations.map((w) => {
       const station = toStation(w);
@@ -149,7 +166,7 @@ export const liveProvider: StationProvider = {
       if (debug) {
         lastDebugMeta = {
           queries: stationsMeta?.queries ?? [],
-          droppedStations: droppedStationsFrom(stationsMeta, location),
+          droppedStations: lastDroppedStations,
           routingDescription:
             'No eligible candidates after filtering — no routing call was made; all distances below are straight-line estimates.',
           maxRoutingCandidates: MAX_ROUTING_CANDIDATES,
@@ -186,7 +203,7 @@ export const liveProvider: StationProvider = {
     if (debug) {
       lastDebugMeta = {
         queries: stationsMeta?.queries ?? [],
-        droppedStations: droppedStationsFrom(stationsMeta, location),
+        droppedStations: lastDroppedStations,
         routingDescription:
           'Only eligible candidates (filtered by club/Top Tier/grade/staleness) are routed, capped at MAX_ROUTING_CANDIDATES (nearest + cheapest fill the cap). Routed candidates get a real OpenRouteService driving distance; everyone else (ineligible, or cut by the cap) keeps a haversine straight-line × 1.3 circuity estimate.',
         maxRoutingCandidates: MAX_ROUTING_CANDIDATES,
@@ -200,5 +217,9 @@ export const liveProvider: StationProvider = {
 
   getDebugMeta(): ProviderDebugMeta | null {
     return lastDebugMeta;
+  },
+
+  getDroppedStations(): DroppedStation[] {
+    return lastDroppedStations;
   },
 };

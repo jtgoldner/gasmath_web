@@ -460,6 +460,79 @@ describe('verdict screen', () => {
     });
     expect(home.querySelector('a[href*="buymeacoffee"]')).toBeNull();
   });
+
+  it('renders the club "no price data" note below the cards and above the coffee line', async () => {
+    const candidates = await mockProvider.getCandidates({ lat: 0, lng: 0 }, SETTINGS);
+    const verdict = decide(candidates, SETTINGS, 0.5, new Date());
+
+    const root = mount();
+    renderVerdict(root, {
+      verdict,
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+      clubNote: {
+        brand: 'costco',
+        name: 'Costco Gas Station',
+        address: '1 Industrial Ln, New Rochelle, NY 10805, USA',
+        distanceMiles: 3.42,
+      },
+    });
+
+    const note = root.querySelector('.club-note');
+    expect(note).not.toBeNull();
+    expect(note!.textContent).toContain("There's a Costco about 3.4 mi away");
+    expect(note!.textContent).toContain("isn't included above");
+
+    // Subordinate: not a card, no best-value styling, no badge.
+    expect(note!.classList.contains('verdict-card')).toBe(false);
+    expect(note!.querySelector('.best-badge')).toBeNull();
+
+    // Ordered after the cards and before the coffee line.
+    const order = [...root.querySelectorAll('.verdict-cards, .club-note, .coffee-note')].map(
+      (el) => el.className,
+    );
+    expect(order).toEqual(['verdict-cards', 'club-note', 'coffee-note']);
+
+    // Its own copy-address button is wired up like the station cards'.
+    const btn = note!.querySelector<HTMLButtonElement>('[data-act="copy-address"]');
+    expect(btn).not.toBeNull();
+    expect(btn!.dataset.copyText).toBe(
+      'Costco Gas Station, 1 Industrial Ln, New Rochelle, NY 10805, USA',
+    );
+  });
+
+  it('omits the club note when there is none, and never shows it on a relaxation screen', async () => {
+    const candidates = await mockProvider.getCandidates({ lat: 0, lng: 0 }, SETTINGS);
+
+    const root = mount();
+    renderVerdict(root, {
+      verdict: decide(candidates, SETTINGS, 0.5, new Date()),
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+      clubNote: null,
+    });
+    expect(root.querySelector('.club-note')).toBeNull();
+
+    // A relaxation offer has no cards for the note to sit under.
+    const offer = mount();
+    renderVerdict(offer, {
+      verdict: { kind: 'offer-relax-staleness' },
+      settings: SETTINGS,
+      onRelaxTopTier: vi.fn(),
+      onRelaxStaleness: vi.fn(),
+      onBack: vi.fn(),
+      clubNote: {
+        brand: 'costco',
+        name: 'Costco Gas Station',
+        distanceMiles: 3.42,
+      },
+    });
+    expect(offer.querySelector('.club-note')).toBeNull();
+  });
 });
 
 describe('settings screen', () => {

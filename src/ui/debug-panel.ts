@@ -1,4 +1,4 @@
-import type { DebugDroppedStation, LatLng, ProviderDebugMeta } from '../data/provider';
+import type { DroppedStation, LatLng, ProviderDebugMeta } from '../data/provider';
 import type { DebugCandidateRow, DebugTrace, DebugVehicleInfo } from '../debug';
 import { money } from './copy';
 
@@ -67,7 +67,7 @@ export function debugPanelHtml(
   // no price, so the cost columns are blank by definition, not by omission.
   type PanelRow =
     | { kind: 'candidate'; distance: number | null; row: DebugCandidateRow }
-    | { kind: 'dropped'; distance: number | null; row: DebugDroppedStation };
+    | { kind: 'dropped'; distance: number | null; row: DroppedStation };
 
   const panelRows: PanelRow[] = [
     ...trace.rows.map((row): PanelRow => ({ kind: 'candidate', distance: row.distanceMiles, row })),

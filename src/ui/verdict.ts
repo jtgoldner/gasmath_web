@@ -1,3 +1,4 @@
+import type { ClubNote } from '../club-note';
 import type { LatLng, ProviderDebugMeta } from '../data/provider';
 import type { DebugTrace, DebugVehicleInfo } from '../debug';
 import { selectedGrade, type Verdict } from '../engine/engine';
@@ -23,6 +24,11 @@ export interface VerdictProps {
   /** One-time NJ self-serve-gas info banner; true only when in NJ and not yet dismissed. */
   showNjBanner?: boolean;
   onDismissNjBanner?: () => void;
+  /**
+   * Nearby members-only club with no price data. Informational only — it is
+   * not a candidate, not ranked, and never affects the cards above it.
+   */
+  clubNote?: ClubNote | null;
 }
 
 /** Escapes a value for safe placement inside an HTML attribute. */
@@ -82,6 +88,22 @@ function stationCardHtml(opts: {
 }
 
 /**
+ * A club the user belongs to that's nearby but has no usable price. Rendered
+ * plain — no card, no border, no badge, no amber — so it reads as a gap in the
+ * data rather than a third recommendation competing with the cards above.
+ */
+function clubNoteHtml(note: ClubNote): string {
+  const c = COPY.clubNote;
+  const copyText = note.address ? `${note.name}, ${note.address}` : note.name;
+  return `
+    <section class="club-note">
+      <p class="club-note-headline">${c.headline(c.names[note.brand], note.distanceMiles.toFixed(1))}</p>
+      <p class="club-note-detail">${c.detail}</p>
+      <button class="copy-address-btn" data-act="copy-address" data-copy-text="${escapeAttr(copyText)}">${COPY.verdict.copyAddress}</button>
+    </section>`;
+}
+
+/**
  * Verdict screen. A decided verdict shows a closest-vs-cheapest comparison —
  * two cards that make the cost delta explicit (or one card when they're the
  * same station). This is a single decision framework, not a ranked list
@@ -121,7 +143,12 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
             badge: c.bestValue,
             savings: v.savings,
           });
-      body = `<div class="verdict-cards">${cards}</div>`;
+      // Below the cheapest card, above the coffee line. Verdict case only —
+      // on the relaxation/dead-end screens there are no cards for it to sit
+      // under, where it would read as a recommendation instead of a caveat.
+      body = `<div class="verdict-cards">${cards}</div>${
+        props.clubNote ? clubNoteHtml(props.clubNote) : ''
+      }`;
       break;
     }
     case 'offer-relax-top-tier':

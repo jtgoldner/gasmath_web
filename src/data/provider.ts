@@ -1,5 +1,5 @@
 import type { Relaxations } from '../engine/engine';
-import type { Candidate } from '../engine/types';
+import type { Candidate, ClubBrand } from '../engine/types';
 import type { AppSettings } from '../storage';
 
 export interface LatLng {
@@ -30,10 +30,14 @@ export interface DebugQueryInfo {
  * A place Places returned that never reached the candidate set — dropped at the
  * proxy for lack of usable price data. Distinct from a candidate the engine
  * excluded: these never got far enough to be excluded.
+ *
+ * Display-only. Feeds the debug panel and the verdict screen's members-only
+ * "no price data" note; never eligible to be ranked or recommended.
  */
-export interface DebugDroppedStation {
+export interface DroppedStation {
   name: string;
   address?: string;
+  club: ClubBrand | null;
   /** Straight-line estimate; null when Places returned no location for the place. */
   distanceMiles: number | null;
   reason: string;
@@ -43,7 +47,7 @@ export interface DebugDroppedStation {
 export interface ProviderDebugMeta {
   queries: DebugQueryInfo[];
   /** Places results dropped before the candidate set was built. */
-  droppedStations: DebugDroppedStation[];
+  droppedStations: DroppedStation[];
   /** How distances were obtained: real routing vs. estimate, and the routing cap. */
   routingDescription: string;
   maxRoutingCandidates: number;
@@ -67,4 +71,9 @@ export interface StationProvider {
   ): Promise<Candidate[]>;
   /** Debug-only: diagnostics from the most recent getCandidates() call, if debug was requested. */
   getDebugMeta?(): ProviderDebugMeta | null;
+  /**
+   * Display-only: places from the most recent getCandidates() call that were
+   * dropped for lack of price data. Never routed, never ranked.
+   */
+  getDroppedStations?(): DroppedStation[];
 }

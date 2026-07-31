@@ -647,6 +647,31 @@ input[type='checkbox'] {
   }
 }
 
+/* ---- Members-only club with no price data (verdict screen) ----
+   Deliberately subordinate: no card surface, no border, no accent colour, so
+   it can't be mistaken for a third recommendation. */
+.club-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 16px 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.club-note-headline,
+.club-note-detail {
+  margin: 0;
+}
+
+.club-note-headline {
+  font-weight: 600;
+}
+
+.club-note .copy-address-btn {
+  margin-top: 8px;
+}
+
 /* ---- Legal footer (rendered in index.html, outside #app) ---- */
 .legal-footer {
   max-width: 480px;

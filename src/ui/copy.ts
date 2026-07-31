@@ -69,6 +69,15 @@ export const COPY = {
     copied: 'Copied!',
   },
 
+  // Members-only club near the user that Places has no price for. Informational
+  // only — deliberately not phrased as a recommendation, since we can't rank it.
+  clubNote: {
+    names: { costco: 'Costco', bjs: "BJ's", samsclub: "Sam's Club" },
+    // "about" because the distance is a straight-line estimate, never routed.
+    headline: (brand: string, miles: string) => `There's a ${brand} about ${miles} mi away`,
+    detail: "We don't have current price data for it, so it isn't included above.",
+  },
+
   njBanner: {
     message:
       "Heads up! As of April 2026, New Jersey lets you pump your own gas. You can still opt for full-service if you'd rather not.",

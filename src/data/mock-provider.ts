@@ -79,4 +79,9 @@ export const mockProvider: StationProvider = {
   getDebugMeta(): ProviderDebugMeta {
     return MOCK_DEBUG_META;
   },
+  // The mock fixtures all carry prices, so nothing is ever dropped for
+  // missing price data — the club note never fires against mock data.
+  getDroppedStations() {
+    return [];
+  },
 };

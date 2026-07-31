@@ -4,7 +4,8 @@ import { buildDebugTrace, buildDebugVehicleInfo, getDebugLocationOverride, isDeb
 import { liveProvider } from './data/live-provider';
 import { mockProvider } from './data/mock-provider';
 import type { LatLng, StationProvider } from './data/provider';
-import { decide, type Relaxations } from './engine/engine';
+import { selectClubNote } from './club-note';
+import { decide, selectedGrade, type Relaxations } from './engine/engine';
 import type { Candidate } from './engine/types';
 import { isUserInNewJersey } from './location';
 import {
@@ -171,6 +172,23 @@ function showVerdict(): void {
   // Purely informational; does not affect the verdict above in any way.
   const showNjBanner = !isNjBannerDismissed() && isUserInNewJersey(session.location, session.candidates);
 
+  // A club the user belongs to that's nearby but has no price data. Computed
+  // AFTER decide() from data the engine already rejected, so it cannot reach
+  // the verdict. Only shown alongside real cards — the relaxation and
+  // dead-end screens have none for it to qualify.
+  const clubNote =
+    verdict.kind === 'verdict'
+      ? selectClubNote(
+          provider.getDroppedStations?.() ?? [],
+          session.candidates,
+          selectedGrade(settings),
+          settings.clubMemberships,
+        )
+      : null;
+  // Measures how often Places is missing club prices in the field. Brand only —
+  // no location, no vehicle (see analytics.ts).
+  if (clubNote) track('club_no_price_note_shown', { brand: clubNote.brand });
+
   renderVerdict(app, {
     verdict,
     settings,
@@ -179,6 +197,7 @@ function showVerdict(): void {
     onBack: showHome,
     showNjBanner,
     onDismissNjBanner: dismissNjBanner,
+    clubNote,
     ...(DEBUG
       ? {
           debugTrace: buildDebugTrace(session.candidates, settings, session.fraction, new Date(), session.relax),

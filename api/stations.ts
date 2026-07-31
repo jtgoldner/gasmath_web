@@ -275,17 +275,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   // rawResultCount vs usableCount separates "Google returned nothing" from
   // "Google returned places we dropped for lack of price data".
   const meta =
-    debug === true
-      ? {
-          searchRadiusMeters: SEARCH_RADIUS_M,
-          queries: queryMeta,
-          // A place usable from any one query is not a drop, even if another
-          // query returned it in an unusable form.
-          droppedPlaces: [...droppedByKey.values()].filter(
-            (d) => !(d.placeId && stations.has(d.placeId)),
-          ),
-        }
-      : undefined;
+    debug === true ? { searchRadiusMeters: SEARCH_RADIUS_M, queries: queryMeta } : undefined;
 
-  res.status(200).json({ stations: [...stations.values()], ...(meta ? { meta } : {}) });
+  // Returned on every request, not just debug: the verdict screen tells a club
+  // member when Places had no price for their club nearby, instead of silently
+  // omitting it. Display-only — these never become candidates.
+  // A place usable from any one query is not a drop, even if another query
+  // returned it in an unusable form.
+  const droppedPlaces = [...droppedByKey.values()].filter(
+    (d) => !(d.placeId && stations.has(d.placeId)),
+  );
+
+  res.status(200).json({ stations: [...stations.values()], droppedPlaces, ...(meta ? { meta } : {}) });
 }
