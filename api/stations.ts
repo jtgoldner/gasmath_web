@@ -31,7 +31,7 @@ const CLUB_QUERIES: Record<string, string> = {
 
 const EARTH_RADIUS_M = 6_371_008.8;
 
-function haversineMeters(
+export function haversineMeters(
   a: { lat: number; lng: number },
   b: { lat: number; lng: number },
 ): number {
@@ -54,7 +54,7 @@ function haversineMeters(
  * box MUST still be post-filtered by true haversine distance (see withinRadius
  * below) or out-of-radius club stations come straight back.
  */
-function boundingBox(lat: number, lng: number, radiusM: number) {
+export function boundingBox(lat: number, lng: number, radiusM: number) {
   // Derived from the same sphere haversineMeters uses, so the box provably
   // CONTAINS the circle. A mismatched constant here would shave the edges and
   // silently drop in-radius stations.
