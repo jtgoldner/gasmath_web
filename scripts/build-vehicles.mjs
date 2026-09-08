@@ -6,8 +6,14 @@
 // Inputs:
 //   data/epa-vehicles.csv     raw EPA dataset (gitignored; see README to fetch)
 //   data/tank-capacity.csv    curated tank capacities, keyed to EPA baseModel
-// Output:
-//   src/data/vehicles.json    [{ year, make, model, combinedMpg, tankCapacityGal, fuelType }]
+// Outputs:
+//   src/data/vehicles.json        [{ year, make, model, combinedMpg, tankCapacityGal, fuelType }]
+//   src/data/vehicles-index.json  { years, makesByYear } — the year/make slice only
+//
+// The index exists so the vehicle picker can render its first two selects
+// without the full table: it ships in the main bundle (~3 kB) while
+// vehicles.json (~250 kB) is a lazily-imported chunk. Both are written here so
+// they can never drift; src/data/vehicles.test.ts asserts they agree.
 //
 // The curated table is the coverage driver: a (make, baseModel) becomes a
 // selectable vehicle only if it has a tank capacity here AND EPA fuel data.
@@ -16,6 +22,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 const EPA = new URL('../data/epa-vehicles.csv', import.meta.url);
 const TANKS = new URL('../data/tank-capacity.csv', import.meta.url);
 const OUT = new URL('../src/data/vehicles.json', import.meta.url);
+const OUT_INDEX = new URL('../src/data/vehicles-index.json', import.meta.url);
 const MIN_YEAR = 2015;
 
 function parseCsv(text) {
@@ -102,10 +109,22 @@ vehicles.sort(
 
 writeFileSync(OUT, JSON.stringify(vehicles, null, 0) + '\n');
 
+// Year/make slice, derived from exactly the rows written above. Ordering
+// mirrors the lookups the picker builds: years newest-first, makes A-Z.
+const years = [...new Set(vehicles.map((v) => v.year))].sort((a, b) => b - a);
+const makesByYear = {};
+for (const year of years) {
+  makesByYear[year] = [
+    ...new Set(vehicles.filter((v) => v.year === year).map((v) => v.make)),
+  ].sort();
+}
+writeFileSync(OUT_INDEX, JSON.stringify({ years, makesByYear }, null, 0) + '\n');
+
 // --- report: curated rows that never matched EPA (likely a baseModel typo) ---
 const matched = new Set(vehicles.map((v) => `${v.make}||${v.model}`));
 const unmatched = [...tanks.keys()].filter((k) => !matched.has(k));
-console.log(`Wrote ${vehicles.length} vehicles across ${new Set(vehicles.map((v) => v.year)).size} years.`);
+console.log(`Wrote ${vehicles.length} vehicles across ${years.length} years.`);
+console.log(`Wrote index: ${years.length} years, ${new Set(vehicles.map((v) => v.make)).size} makes.`);
 console.log(`Curated nameplates: ${tanks.size}, matched: ${matched.size}.`);
 if (unmatched.length) {
   console.log(`\nUNMATCHED curated rows (check baseModel string vs EPA):`);

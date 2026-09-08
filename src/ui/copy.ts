@@ -9,6 +9,9 @@ export const COPY = {
     vehicleTitle: 'What do you drive?',
     vehicleHint: 'GasMath uses your EPA mileage and tank size to do the math. Stored on your device only — no account or sign in necessary.',
     dieselNotice: 'Diesel support is coming soon. GasMath prices gasoline only for now.',
+    // Shown in the model select only if a make is picked before the lazily
+    // loaded vehicle table arrives. Usually never seen.
+    loadingModels: 'Loading…',
     clubsTitle: 'Warehouse club gas',
     clubsHint: "Only members can buy club gas, so GasMath only includes stations you can actually use.",
     costcoLabel: "I'm a Costco member",
