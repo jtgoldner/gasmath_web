@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
 import { mockProvider } from '../data/mock-provider';
-import { loadVehicleLookups } from '../data/vehicles';
+import { vehicleLookups } from '../data/vehicles';
 import { buildDebugTrace, buildDebugVehicleInfo } from '../debug';
 import { decide } from '../engine/engine';
 import type { Candidate } from '../engine/types';
@@ -65,12 +65,7 @@ describe('storage', () => {
 });
 
 describe('onboarding', () => {
-  it('walks vehicle → clubs → Top Tier → octane and emits complete settings', async () => {
-    // The model list comes from the lazily-loaded vehicle table; awaiting it
-    // warms the module cache so the picker wires up synchronously, which is
-    // the state a real user is in by the time they reach the model select.
-    await loadVehicleLookups();
-
+  it('walks vehicle → clubs → Top Tier → octane and emits complete settings', () => {
     const root = mount();
     const done = vi.fn();
     renderOnboarding(root, done);
@@ -559,14 +554,11 @@ describe('settings screen', () => {
     );
   });
 
-  it('shows a read-only EPA combined MPG / tank readout that updates with the vehicle', async () => {
-    // Resolved against the real dataset (same source the picker uses), so this
-    // stays correct even if EPA/tank values are refreshed later. Awaiting the
-    // load also warms the module cache, so the picker below wires up
-    // synchronously — the same path a user gets once the chunk has landed.
-    const lookups = await loadVehicleLookups();
-    const camry = lookups.findVehicle(2024, 'Toyota', 'Camry')!;
-    const corolla = lookups.findVehicle(2024, 'Toyota', 'Corolla')!;
+  it('shows a read-only EPA combined MPG / tank readout that updates with the vehicle', () => {
+    // Resolved against the real bundled dataset (same source the picker uses),
+    // so this stays correct even if EPA/tank values are refreshed later.
+    const camry = vehicleLookups.findVehicle(2024, 'Toyota', 'Camry')!;
+    const corolla = vehicleLookups.findVehicle(2024, 'Toyota', 'Corolla')!;
 
     const root = mount();
     renderSettings(root, { settings: SETTINGS, onChange: vi.fn(), onBack: vi.fn() });
