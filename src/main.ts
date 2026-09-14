@@ -1,7 +1,7 @@
 import './style.css';
 import { initAnalytics, track } from './analytics';
 import { buildDebugTrace, buildDebugVehicleInfo, getDebugLocationOverride, isDebugMode } from './debug';
-import { liveProvider } from './data/live-provider';
+import { liveProvider, UpstreamUnavailableError } from './data/live-provider';
 import { mockProvider } from './data/mock-provider';
 import type { LatLng, StationProvider } from './data/provider';
 import { selectClubNote } from './club-note';
@@ -24,7 +24,7 @@ import { renderHome } from './ui/home';
 import { renderHybridInfo } from './ui/hybrid-info';
 import { renderOnboarding } from './ui/onboarding';
 import { renderSettings } from './ui/settings';
-import { renderVerdict } from './ui/verdict';
+import { renderPricesUnavailable, renderVerdict } from './ui/verdict';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
@@ -130,6 +130,20 @@ function showSettings(): void {
   });
 }
 
+/**
+ * A pricing-service outage gets the calm verdict-screen state with a retry
+ * that re-runs the same search; anything else keeps the existing generic
+ * error card. Retrying re-issues the request, it does not replay a cached one.
+ */
+function showSearchFailure(err: unknown, retry: () => void): void {
+  if (err instanceof UpstreamUnavailableError) {
+    track('prices_unavailable', { detail: err.detail });
+    renderPricesUnavailable(app, { onBack: showHome, onRetry: retry });
+    return;
+  }
+  showError();
+}
+
 async function startSearch(fraction: number): Promise<void> {
   showLoading();
   track('search_started');
@@ -138,8 +152,21 @@ async function startSearch(fraction: number): Promise<void> {
     const candidates = await provider.getCandidates(location, settings!, {}, DEBUG);
     session = { location, candidates, fraction, relax: {} };
     showVerdict();
-  } catch {
-    showError();
+  } catch (err) {
+    showSearchFailure(err, () => void startSearch(fraction));
+  }
+}
+
+/** Re-fetches the current session under its accepted relaxations and re-renders. */
+async function refetchSession(): Promise<void> {
+  if (!settings || !session) return showHome();
+  showLoading();
+  try {
+    session.candidates = await provider.getCandidates(session.location, settings, session.relax, DEBUG);
+    showVerdict();
+  } catch (err) {
+    // Retry re-fetches as-is; it must not re-record the relaxation as newly accepted.
+    showSearchFailure(err, () => void refetchSession());
   }
 }
 
@@ -147,13 +174,7 @@ async function acceptRelax(patch: Relaxations): Promise<void> {
   if (!settings || !session) return showHome();
   session.relax = { ...session.relax, ...patch };
   track('relax_accepted', { type: patch.topTier ? 'top_tier' : 'staleness' });
-  showLoading();
-  try {
-    session.candidates = await provider.getCandidates(session.location, settings, session.relax, DEBUG);
-    showVerdict();
-  } catch {
-    showError();
-  }
+  await refetchSession();
 }
 
 function showVerdict(): void {

@@ -97,6 +97,10 @@ export const COPY = {
   errors: {
     fetchFailed: "Something went wrong getting prices. Check your connection and try again.",
     retry: 'Try again',
+    // The pricing service itself is down or refusing us — not the user's
+    // connection, so deliberately calm and not phrased as their problem.
+    pricesUnavailable: 'Prices temporarily unavailable — try again shortly.',
+    pricesUnavailableDetail: "We couldn't reach the live price service. Nothing's wrong on your end.",
   },
 } as const;
 

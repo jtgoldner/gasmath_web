@@ -650,7 +650,8 @@ input[type='checkbox'] {
 /* ---- Members-only club with no price data (verdict screen) ----
    Deliberately subordinate: no card surface, no border, no accent colour, so
    it can't be mistaken for a third recommendation. */
-.club-note {
+.club-note,
+.prices-unavailable {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -660,16 +661,26 @@ input[type='checkbox'] {
 }
 
 .club-note-headline,
-.club-note-detail {
+.club-note-detail,
+.prices-unavailable-headline,
+.prices-unavailable-detail {
   margin: 0;
 }
 
-.club-note-headline {
+.club-note-headline,
+.prices-unavailable-headline {
   font-weight: 600;
 }
 
-.club-note .copy-address-btn {
+.club-note .copy-address-btn,
+.prices-unavailable .copy-address-btn {
   margin-top: 8px;
+}
+
+/* The unavailable state stands alone on the screen with nothing above it,
+   so give it the same top breathing room a card would have had. */
+.prices-unavailable {
+  padding-top: 16px;
 }
 
 /* ---- Legal footer (rendered in index.html, outside #app) ---- */

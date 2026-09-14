@@ -17,6 +17,74 @@ const FIELD_MASK =
   'places.id,places.displayName,places.formattedAddress,places.location,places.fuelOptions';
 
 /**
+ * Hard ceiling on a single Places call. Without it a hung upstream connection
+ * only ends when Vercel kills the function, which surfaces to the client as
+ * an opaque platform error rather than a categorised one.
+ */
+const UPSTREAM_TIMEOUT_MS = 10_000;
+
+/**
+ * Why a Places call failed, as the client sees it. Coarse on purpose: the
+ * client shows the same "prices temporarily unavailable" state for all of
+ * them; the value exists so the debug panel and server logs can tell an
+ * expired key from a quota blowout without a stack trace.
+ */
+export type UpstreamFailure =
+  | 'billing_or_permission'
+  | 'quota_exceeded'
+  | 'invalid_api_key'
+  | 'upstream_error'
+  | 'network_unreachable';
+
+/**
+ * Classifies a non-2xx Places response. Google's error envelope is
+ * `{ error: { code, message, status } }`; the `status` string is the most
+ * reliable signal, with HTTP status and message text as fallbacks. Order
+ * matters — an invalid key can also arrive as a 403, so the key check goes
+ * first because it's the most specific.
+ */
+export function classifyUpstreamError(
+  httpStatus: number,
+  body: string,
+): { detail: UpstreamFailure; label: string } {
+  const text = body.toLowerCase();
+  let googleStatus = '';
+  try {
+    googleStatus = String(JSON.parse(body)?.error?.status ?? '').toUpperCase();
+  } catch {
+    /* not JSON — fall through to text/status heuristics */
+  }
+
+  if (
+    googleStatus === 'REQUEST_DENIED' ||
+    text.includes('api key not valid') ||
+    text.includes('api key expired') ||
+    text.includes('api_key_invalid') ||
+    text.includes('api key was not found')
+  ) {
+    return { detail: 'invalid_api_key', label: 'API key' };
+  }
+  if (httpStatus === 429 || googleStatus === 'RESOURCE_EXHAUSTED') {
+    return { detail: 'quota_exceeded', label: 'quota' };
+  }
+  if (httpStatus === 403 || googleStatus === 'PERMISSION_DENIED' || text.includes('billing')) {
+    return { detail: 'billing_or_permission', label: 'billing' };
+  }
+  return { detail: 'upstream_error', label: 'upstream' };
+}
+
+/** Structured 502 the client can distinguish from a platform crash. */
+function failUpstream(res: VercelResponse, detail: UpstreamFailure): void {
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(502).json({ error: 'upstream_unavailable', detail });
+}
+
+/** One greppable line per failure class: `[stations] Google Places <label> error:`. */
+function logUpstream(label: string, what: string): void {
+  console.error(`[stations] Google Places ${label} error: ${what}`);
+}
+
+/**
  * Members-only supplemental club-brand queries (PRD §6). These must match how
  * Places actually NAMES these places, not the brand's marketing name — the
  * live data calls them "Costco Gas Station", so that is what we search for.
@@ -225,6 +293,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     fetch(NEARBY_URL, {
       method: 'POST',
       headers,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       body: JSON.stringify({
         includedTypes: ['gas_station'],
         maxResultCount: 20,
@@ -236,6 +305,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       fetch(TEXT_URL, {
         method: 'POST',
         headers,
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         body: JSON.stringify({
           textQuery,
           includedType: 'gas_station',
@@ -252,15 +322,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     ),
   ];
 
-  const responses = await Promise.all(requests);
-  if (!responses[0].ok) {
-    const body = await responses[0].text().catch(() => '');
-    console.error(
-      `[stations] Nearby Search FAILED: HTTP ${responses[0].status} — ${body.slice(0, 500)}`,
-    );
-    res.status(502).json({ error: `Places upstream returned ${responses[0].status}` });
+  // allSettled, not all: a club query that can't reach Google at all should
+  // degrade like a club query that returned an error, not take the main
+  // query down with it. Only the main query failing is fatal.
+  const settled = await Promise.allSettled(requests);
+
+  const main = settled[0];
+  if (main.status === 'rejected') {
+    // fetch() itself threw — DNS, TLS, connection reset, or our own timeout
+    // (TimeoutError). Google was never reached, so there is no HTTP status
+    // or error body to classify. Previously this escaped as an unhandled
+    // exception and Vercel reported a bare FUNCTION_INVOCATION_FAILED.
+    const reason = main.reason as { name?: string; message?: string } | undefined;
+    logUpstream('network', `Nearby Search unreachable — ${reason?.name ?? 'Error'}: ${reason?.message ?? String(main.reason)}`);
+    failUpstream(res, 'network_unreachable');
     return;
   }
+  if (!main.value.ok) {
+    const body = await main.value.text().catch(() => '');
+    const { detail, label } = classifyUpstreamError(main.value.status, body);
+    logUpstream(label, `Nearby Search HTTP ${main.value.status} — ${body.slice(0, 500)}`);
+    failUpstream(res, detail);
+    return;
+  }
+
+  // Main query is OK; unwrap the rest for the per-query loop below. A club
+  // query whose fetch rejected is represented as null so it gets the same
+  // "degraded, logged, never silent" treatment as a non-OK response.
+  const responses: (Response | null)[] = settled.map((s) => (s.status === 'fulfilled' ? s.value : null));
+  const rejections = settled.map((s) => (s.status === 'rejected' ? s.reason : null));
 
   // Query labels stay index-aligned with `requests` above so per-query counts
   // can be attributed to the query that produced them.
@@ -290,6 +380,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       radiusMeters: SEARCH_RADIUS_M,
       mode: 'locationRestriction' as const,
     };
+    const degraded = (status: number, error: string) =>
+      queryMeta.push({
+        ...base,
+        rawResultCount: 0,
+        usableCount: 0,
+        upstreamStatus: status,
+        upstreamError: error.slice(0, 400),
+        ...(label.club ? { rawPlaceNames: [] } : {}),
+      });
+
+    // A supplemental club query whose fetch never completed (index 0 can't
+    // reach here — a rejected main query already returned above). Status 0
+    // = no HTTP response at all.
+    if (r === null) {
+      const reason = rejections[i] as { name?: string; message?: string } | undefined;
+      const what = `${reason?.name ?? 'Error'}: ${reason?.message ?? String(rejections[i])}`;
+      logUpstream('network', `${label.description} unreachable — ${what}`);
+      degraded(0, what);
+      continue;
+    }
 
     // A failed supplemental club query still degrades gracefully for the user,
     // but it is NEVER silent: logged server-side and reported in the debug
@@ -297,21 +407,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // precisely because this path used to be a bare `continue`.
     if (!r.ok) {
       const body = await r.text().catch(() => '');
-      console.error(
-        `[stations] Places query FAILED: ${label.description} → HTTP ${r.status} — ${body.slice(0, 500)}`,
-      );
-      queryMeta.push({
-        ...base,
-        rawResultCount: 0,
-        usableCount: 0,
-        upstreamStatus: r.status,
-        upstreamError: body.slice(0, 400),
-        ...(label.club ? { rawPlaceNames: [] } : {}),
-      });
+      const { label: cls } = classifyUpstreamError(r.status, body);
+      logUpstream(cls, `${label.description} HTTP ${r.status} — ${body.slice(0, 500)}`);
+      degraded(r.status, body);
       continue;
     }
 
-    const { stations: converted, dropped, names } = convertPlaces(await r.json());
+    // A 2xx with an unparseable body is still a failure. For the main query
+    // that's fatal (nothing to build candidates from); for a club query it
+    // degrades like any other club failure.
+    let payload: unknown;
+    try {
+      payload = await r.json();
+    } catch (e) {
+      const what = `malformed JSON in 2xx response — ${(e as Error)?.message ?? String(e)}`;
+      logUpstream('upstream', `${label.description}: ${what}`);
+      if (i === 0) {
+        failUpstream(res, 'upstream_error');
+        return;
+      }
+      degraded(r.status, what);
+      continue;
+    }
+
+    const { stations: converted, dropped, names } = convertPlaces(payload);
 
     // Text Search was bounded by a rectangle, which is looser than the circle
     // at its corners — enforce the real radius here. Nearby Search was already

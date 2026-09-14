@@ -104,6 +104,31 @@ function clubNoteHtml(note: ClubNote): string {
 }
 
 /**
+ * The pricing service couldn't be reached (proxy returned `upstream_unavailable`).
+ * Rendered in the verdict screen's frame so the user stays where they were,
+ * with the same muted, non-alarming treatment as the club "no price data"
+ * note — this is our problem, not theirs, and the copy says so. No Google
+ * attribution here: no Places data is displayed.
+ */
+export function renderPricesUnavailable(
+  root: HTMLElement,
+  props: { onBack: () => void; onRetry: () => void },
+): void {
+  const e = COPY.errors;
+  root.innerHTML = `
+    <main class="screen">
+      ${headerHtml({ left: backButton })}
+      <section class="prices-unavailable" data-act="prices-unavailable">
+        <p class="prices-unavailable-headline">${e.pricesUnavailable}</p>
+        <p class="prices-unavailable-detail">${e.pricesUnavailableDetail}</p>
+        <button class="copy-address-btn" data-act="retry">${e.retry}</button>
+      </section>
+    </main>`;
+  root.querySelector('[data-act="back"]')!.addEventListener('click', props.onBack);
+  root.querySelector('[data-act="retry"]')!.addEventListener('click', props.onRetry);
+}
+
+/**
  * Verdict screen. A decided verdict shows a closest-vs-cheapest comparison —
  * two cards that make the cost delta explicit (or one card when they're the
  * same station). This is a single decision framework, not a ranked list

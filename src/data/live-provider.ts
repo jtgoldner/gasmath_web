@@ -68,13 +68,40 @@ function toStation(w: WireStation): Station {
   };
 }
 
+/**
+ * The proxy could not get prices from Google (see api/stations.ts). Thrown so
+ * the UI can show a calm "temporarily unavailable" state instead of the
+ * generic connection-error card, which would send the user off checking a
+ * connection that's fine. `detail` is the proxy's coarse failure class.
+ */
+export class UpstreamUnavailableError extends Error {
+  constructor(public readonly detail: string) {
+    super(`upstream unavailable: ${detail}`);
+    this.name = 'UpstreamUnavailableError';
+  }
+}
+
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const resp = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!resp.ok) throw new Error(`${url} returned ${resp.status}`);
+  if (!resp.ok) {
+    // The proxy's structured upstream failure is distinguishable from any
+    // other non-2xx (a real network problem, a platform 500, a 400 from us).
+    // Body parsing is best-effort: anything unrecognised stays a plain Error.
+    const parsed: unknown = await resp.json().catch(() => null);
+    if (
+      parsed !== null &&
+      typeof parsed === 'object' &&
+      (parsed as { error?: unknown }).error === 'upstream_unavailable'
+    ) {
+      const detail = (parsed as { detail?: unknown }).detail;
+      throw new UpstreamUnavailableError(typeof detail === 'string' ? detail : 'unknown');
+    }
+    throw new Error(`${url} returned ${resp.status}`);
+  }
   return resp.json() as Promise<T>;
 }
 
