@@ -35,9 +35,12 @@ GasMath (https://gasmath.app) answers one question: **which gas station is actua
 
 ```
 gallons_needed = slider_fraction × tank_capacity
-detour_gallons = round_trip_extra_miles ÷ vehicle_mpg
+detour_miles   = one_way_distance × trip_multiplier   (2 round trip, 1 one way)
+detour_gallons = detour_miles ÷ vehicle_mpg
 effective_cost = (gallons_needed + detour_gallons) × station_price
 ```
+
+- **Trip type (PRD §5.2c):** detour distance is the routed one-way distance multiplied by **2** (Round trip, the default) or **1** (One way) — a per-calculation choice on the fuel-amount screen, not a setting. It is applied in exactly one place (`detourMiles` in `src/engine/engine.ts`); don't add a precomputed detour field or scatter trip-type conditionals. ORS routing calls are unchanged. Only the last-used value is kept in localStorage, as the control's starting state.
 
 - Candidate set: one Nearby Search, 50 km radius (API max), ranked by distance, top 20. Density self-adapts via the cap.
 - Supplemental club-brand query for members only; merge before filtering.

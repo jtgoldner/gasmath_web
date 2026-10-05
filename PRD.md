@@ -1,8 +1,8 @@
 # GasMath — Product Requirements Document
 
-**Version:** 1.4
+**Version:** 1.5
 **Owner:** Jonathan Goldner
-**Date:** June 12, 2026
+**Date:** October 5, 2026
 **Status:** Build-ready — all product decisions resolved; Q8/Q9 are build-time tasks with agreed approaches
 
 ---
@@ -79,6 +79,20 @@ Unlike price-listing apps (GasBuddy, Google Maps), GasMath computes the *true to
 4. **Verdict screen:** a closest-vs-cheapest comparison (evolved from "one recommendation" — v1.4, 2026-06-12). Two stacked cards make the cost delta explicit: **your closest station** (nearest eligible, regardless of price) and **your cheapest station** (the winner), with *"You'll save $X by driving here instead."* This is one decision framework that shows its work — not a ranked list. When the winner *is* the nearest station, collapse to a single card flagged "also your cheapest."
    - **$X baseline:** savings vs. filling up at the nearest eligible station — the "autopilot" default. The delta shown equals the difference between the two cards' estimated costs (effective cost: gallons needed × price plus the fuel to drive there).
 
+### 5.2c Trip type (per calculation)
+*Added v1.5, 2026-10-05.* Whether the trip back to the starting point counts toward the detour depends on where the user is headed next, so it is asked every time rather than stored as a preference.
+
+- **Control:** a compact two-segment control on the fuel-amount screen (the pump gauge), directly above the primary CTA.
+  - **Round trip** — "Coming back to this location." Default for first-time users.
+  - **One way** — "Going other places."
+  - The descriptor for the selected option is shown beneath the control, so the meaning is clear without a tooltip.
+- **Per-calculation, not a setting.** It does not appear on the Settings page, and it is visible every time a calculation starts.
+- **Default = last used.** The trip type of the most recent calculation is the only thing stored (localStorage) and is read as the control's initial state; a fresh browser falls back to Round trip. This is a convenience default, not a preference.
+- **Effect on the math (§6):** the one-way distance to each station is multiplied by 2 (Round trip) or 1 (One way) to get the detour miles. It is applied in one place and flows through every consumer: effective-cost ranking, winner selection, both verdict cards' estimated costs, and the "You'll save $X" delta (closest vs. cheapest, under the same trip type). It applies equally to routed (ORS) and estimated distances. Routing calls are unchanged — ORS still returns the one-way distance. Filtering (club, Top Tier, grade, staleness) and the search radius are unaffected, as is the club no-price note.
+- **Verdict screen:** a small, muted line near the top of the results states the mode used ("Trip type: Round trip" / "Trip type: One way"), so the assumption behind the answer is always visible. No accent color, no badge.
+- **Debug (`?debug=true`):** the session metadata shows the trip type and its multiplier; each candidate's detour gallons and effective cost reflect it.
+- **Analytics:** `verdict_shown` carries `trip_type` (`round_trip` | `one_way`). No location or vehicle data.
+
 ### 5.3 Settings
 - Change vehicle (single vehicle only at MVP)
 - Change warehouse club membership status
@@ -94,9 +108,13 @@ For each candidate station within the search radius:
 
 ```
 gallons_needed      = slider_fraction × tank_capacity
-detour_gallons      = round_trip_extra_miles ÷ vehicle_mpg   (via routing API)
+trip_multiplier     = 2 (round trip) | 1 (one way)            (chosen per calculation, §5.2c)
+detour_miles        = trip_multiplier × one_way_distance      (distance via routing API)
+detour_gallons      = detour_miles ÷ vehicle_mpg
 effective_cost      = (gallons_needed × station_price) + (detour_gallons × station_price)
 ```
+
+- **Trip type (v1.5):** the routing API returns the one-way distance to each station; only the `trip_multiplier` varies with the user's Round trip / One way choice. Round trip (2×) is the default and matches the behavior before v1.5.
 
 - Candidate set: single Nearby Search at 50 km max radius, **ranked by distance, capped at 20 results** (API max). The cap makes the effective search area self-adapt to station density — tight in cities, wide in rural areas — with no user input or density classification.
 - **Warehouse club supplemental query:** if the user is a club member, run a second targeted search for their club brand(s), since dense areas may push a winning club station out of the 20-nearest set. Members only; merged into the candidate set before filtering.
@@ -117,7 +135,7 @@ effective_cost      = (gallons_needed × station_price) + (detour_gallons × sta
 | SSL | **Required.** Note: `.app` is an HSTS-preloaded TLD — HTTPS is mandatory at the browser level. Hosting (Cloudflare Pages / Vercel) provides certs automatically. |
 | Hosting | **Vercel**: static frontend deployed from GitHub repo; serverless function in `/api` for the price proxy/cache. **Licensing note:** free Hobby tier is judged defensible only while the app is ad-free and costs users nothing. **Before any direct monetization, hosting must move to a paid Vercel plan or Cloudflare** — treat as a planned scaling maneuver. |
 | Repo | GitHub, under `jtgoldner` |
-| Storage | localStorage only (vehicle, club membership, optional cached results) |
+| Storage | localStorage only (vehicle, club membership, last-used trip type, optional cached results) |
 | PWA | Manifest + iOS meta tags + icon; installable to home screen |
 | Analytics | Google Analytics 4 + Search Console (traction data supports acquisition narrative) |
 | Attribution | "Powered by Google" logo displayed with station/price data on the verdict screen — this is the attribution Google requires for Places data shown *without* a map. Follow Google's style guidelines (use the logo unaltered); visually distinguish Google content. The separate "Google Maps" logo applies only if results are ever shown on an actual map, which must then be a Google Map. |
