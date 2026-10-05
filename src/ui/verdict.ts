@@ -171,7 +171,11 @@ export function renderVerdict(root: HTMLElement, props: VerdictProps): void {
       // Below the cheapest card, above the coffee line. Verdict case only —
       // on the relaxation/dead-end screens there are no cards for it to sit
       // under, where it would read as a recommendation instead of a caveat.
-      body = `<div class="verdict-cards">${cards}</div>${
+      // The trip-type line names the assumption behind the figures below it. It
+      // reads v.tripType — what decide() actually costed with — not a prop that
+      // could drift. Shown only alongside real results, so it is verdict-case only.
+      const tripLine = COPY.tripType.verdictLine(COPY.tripType.labels[v.tripType]);
+      body = `<p class="trip-mode-line" data-act="trip-mode">${tripLine}</p><div class="verdict-cards">${cards}</div>${
         props.clubNote ? clubNoteHtml(props.clubNote) : ''
       }`;
       break;

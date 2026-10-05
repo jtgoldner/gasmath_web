@@ -37,7 +37,6 @@ describe('buildDebugTrace', () => {
     const c: Candidate = {
       station: station(),
       distanceMiles: 1,
-      roundTripExtraMiles: 2,
       distanceSource: 'routed',
     };
     const trace = buildDebugTrace([c], settings(), 0.5, NOW);
@@ -54,7 +53,6 @@ describe('buildDebugTrace', () => {
     const c: Candidate = {
       station: station({ club: 'costco' }),
       distanceMiles: 150,
-      roundTripExtraMiles: 300,
     };
     const trace = buildDebugTrace([c], settings(), 0.5, NOW);
     expect(trace.rows[0].excludedBy).toEqual(['club filter: "costco" — not a member']);
@@ -66,17 +64,14 @@ describe('buildDebugTrace', () => {
     const offBrand: Candidate = {
       station: station({ placeId: 'off-brand', isTopTier: false }),
       distanceMiles: 1,
-      roundTripExtraMiles: 2,
     };
     const noGrade: Candidate = {
       station: station({ placeId: 'no-grade', prices: {} }),
       distanceMiles: 1,
-      roundTripExtraMiles: 2,
     };
     const stale: Candidate = {
       station: station({ placeId: 'stale', prices: { regular: quote(3.0, 999) } }),
       distanceMiles: 1,
-      roundTripExtraMiles: 2,
     };
     const trace = buildDebugTrace([offBrand, noGrade, stale], settings(), 0.5, NOW);
     const byPlaceId = (id: string) => trace.rows.find((r) => r.placeId === id)!;
@@ -88,8 +83,8 @@ describe('buildDebugTrace', () => {
   });
 
   it('sorts rows farthest first, surfacing far-away candidates immediately', () => {
-    const near: Candidate = { station: station({ placeId: 'near' }), distanceMiles: 2, roundTripExtraMiles: 4 };
-    const far: Candidate = { station: station({ placeId: 'far' }), distanceMiles: 150, roundTripExtraMiles: 300 };
+    const near: Candidate = { station: station({ placeId: 'near' }), distanceMiles: 2 };
+    const far: Candidate = { station: station({ placeId: 'far' }), distanceMiles: 150 };
     const trace = buildDebugTrace([near, far], settings(), 0.5, NOW);
     expect(trace.rows[0].placeId).toBe('far');
     expect(trace.rows[1].placeId).toBe('near');
@@ -99,7 +94,6 @@ describe('buildDebugTrace', () => {
     const offBrand: Candidate = {
       station: station({ isTopTier: false }),
       distanceMiles: 1,
-      roundTripExtraMiles: 2,
     };
     const withoutRelax = buildDebugTrace([offBrand], settings(), 0.5, NOW);
     expect(withoutRelax.rows[0].excludedBy).toContain('Top Tier filter: not a certified brand');

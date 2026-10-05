@@ -35,7 +35,6 @@ function candidate(
       prices,
     },
     distanceMiles,
-    roundTripExtraMiles: 2 * distanceMiles,
   };
 }
 

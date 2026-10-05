@@ -16,7 +16,7 @@ function station(address?: string, overrides: Partial<Station> = {}): Station {
 }
 
 function candidate(distanceMiles: number, address?: string): Candidate {
-  return { station: station(address), distanceMiles, roundTripExtraMiles: 2 * distanceMiles };
+  return { station: station(address), distanceMiles };
 }
 
 describe('extractStateFromAddress', () => {

@@ -304,6 +304,83 @@ input[type='checkbox'] {
   clip: rect(0 0 0 0);
 }
 
+/* ---- Trip type: Round trip / One way (fuel-amount screen, PRD §5.2c) ----
+   A compact two-segment control directly above the CTA. The selected segment
+   is shown by surface + ink, never amber — amber stays reserved for CTAs. The
+   radio inputs are visually hidden but still focusable, so arrow keys and
+   screen readers get native radiogroup behaviour. */
+.trip-type {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.trip-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  width: 100%;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.trip-seg {
+  display: block;
+  cursor: pointer;
+}
+
+.trip-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.trip-seg-label {
+  display: block;
+  padding: 11px 8px; /* ≥44px tall: a comfortable thumb target */
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.trip-input:checked + .trip-seg-label {
+  background: var(--surface-2);
+  border-color: var(--muted);
+  color: var(--ink);
+}
+
+.trip-input:focus-visible + .trip-seg-label {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.trip-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+/* Verdict screen: which assumption produced the answer. Subtle by design —
+   muted, small, no accent colour, no badge. */
+.trip-mode-line {
+  margin: 0;
+  padding: 0 16px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .pump-readout {
   display: flex;
   flex-direction: column;

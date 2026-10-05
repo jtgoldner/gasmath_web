@@ -118,7 +118,7 @@ describe('home / fuel gauge', () => {
     expect(root.querySelector('[data-act="gallons"]')!.textContent).toContain('4.0');
 
     click(root, '[data-act="find"]');
-    expect(onFind).toHaveBeenCalledWith(0.25);
+    expect(onFind).toHaveBeenCalledWith(0.25, 'round_trip'); // trip type rides along (PRD §5.2c)
   });
 
   it('floors the gauge at 0.1 gallons so Find is always actionable', () => {
@@ -382,7 +382,6 @@ describe('verdict screen', () => {
     const candidate = (distanceMiles: number, price: number, name: string, address: string): Candidate => ({
       station: { placeId: name, name, address, brand: name, club: null, isTopTier: true, prices: { regular: fresh(price) } },
       distanceMiles,
-      roundTripExtraMiles: 2 * distanceMiles,
     });
     // Nearest is also cheapest → winnerIsNearest.
     const verdict = decide(

@@ -23,16 +23,24 @@ export interface Station {
   prices: Partial<Record<FuelGrade, PriceQuote>>;
 }
 
+/**
+ * Whether the trip back counts toward the detour (PRD §5.2c). Chosen per
+ * calculation on the fuel-amount screen — it is not a setting.
+ *  - round_trip: coming back to where they started, so the detour is there AND back.
+ *  - one_way: going on elsewhere, so only the leg to the station is extra.
+ */
+export type TripType = 'round_trip' | 'one_way';
+
 /** A station plus the routing facts needed to cost it (PRD §6). */
 export interface Candidate {
   station: Station;
-  /** One-way driving distance from the user, in miles. Defines "nearest" and breaks ties. */
-  distanceMiles: number;
   /**
-   * Extra round-trip miles driven to use this station. MVP has no destination
-   * input, so the data layer sets this to 2 × distanceMiles (there and back).
+   * One-way driving distance from the user, in miles. Defines "nearest" and
+   * breaks ties. The detour the engine costs is this × the trip multiplier
+   * (see `detourMiles` in engine.ts) — there is deliberately no precomputed
+   * detour field, so the trip type has exactly one place to apply.
    */
-  roundTripExtraMiles: number;
+  distanceMiles: number;
   /**
    * DEBUG ONLY (not used by engine logic): where distanceMiles came from.
    * 'routed' = real OpenRouteService driving distance; 'estimated' = haversine

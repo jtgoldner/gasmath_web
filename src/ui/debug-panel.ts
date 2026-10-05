@@ -124,7 +124,7 @@ export function debugPanelHtml(
     <section class="card debug-panel">
       <h2>Debug trace <span class="muted">(?debug=true)</span></h2>
       ${overrideWarning}
-      <p class="muted">Grade: ${trace.grade} · Slider fraction: ${trace.sliderFraction.toFixed(3)} · Generated: ${trace.generatedAt}</p>
+      <p class="muted">Grade: ${trace.grade} · Slider fraction: ${trace.sliderFraction.toFixed(3)} · Trip type: ${trace.tripType} (detour multiplier ×${trace.tripMultiplier}) · Generated: ${trace.generatedAt}</p>
       <p class="muted">Vehicle: ${
         vehicle
           ? `${vehicle.year} ${vehicle.make} ${vehicle.model} — EPA combined ${vehicle.combinedMpg} MPG · Tank ${vehicle.tankCapacityGal} gal`

@@ -1,6 +1,15 @@
 import type { LatLng } from './data/provider';
-import { detourGallons, gallonsNeeded, isFresh, selectedGrade, type Relaxations } from './engine/engine';
-import type { Candidate, FuelGrade, UserSettings } from './engine/types';
+import {
+  DEFAULT_TRIP_TYPE,
+  detourGallons,
+  detourMiles,
+  gallonsNeeded,
+  isFresh,
+  selectedGrade,
+  tripMultiplier,
+  type Relaxations,
+} from './engine/engine';
+import type { Candidate, FuelGrade, TripType, UserSettings } from './engine/types';
 import type { AppSettings } from './storage';
 
 /**
@@ -27,6 +36,9 @@ export interface DebugCandidateRow {
 export interface DebugTrace {
   grade: FuelGrade;
   sliderFraction: number;
+  /** The trip type this session was costed under, and the multiplier it maps to. */
+  tripType: TripType;
+  tripMultiplier: number;
   generatedAt: string;
   rows: DebugCandidateRow[];
 }
@@ -37,6 +49,7 @@ export function buildDebugTrace(
   sliderFraction: number,
   now: Date,
   relax: Relaxations = {},
+  tripType: TripType = DEFAULT_TRIP_TYPE,
 ): DebugTrace {
   const grade = selectedGrade(settings);
 
@@ -57,7 +70,8 @@ export function buildDebugTrace(
     }
 
     const gNeeded = gallonsNeeded(sliderFraction, settings.vehicle.tankCapacityGal);
-    const dGal = detourGallons(c.roundTripExtraMiles, settings.vehicle.combinedMpg);
+    // Same detourMiles() the engine costs with — never a second copy of the math.
+    const dGal = detourGallons(detourMiles(c, tripType), settings.vehicle.combinedMpg);
     const cost = quote ? (gNeeded + dGal) * quote.price : null;
 
     return {
@@ -78,7 +92,14 @@ export function buildDebugTrace(
   // much farther away than the search radius should allow).
   rows.sort((a, b) => b.distanceMiles - a.distanceMiles);
 
-  return { grade, sliderFraction, generatedAt: now.toISOString(), rows };
+  return {
+    grade,
+    sliderFraction,
+    tripType,
+    tripMultiplier: tripMultiplier(tripType),
+    generatedAt: now.toISOString(),
+    rows,
+  };
 }
 
 /** Vehicle identity + the EPA-derived MPG/tank values the engine used this session. */

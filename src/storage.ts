@@ -1,4 +1,5 @@
-import type { UserSettings } from './engine/types';
+import { DEFAULT_TRIP_TYPE } from './engine/engine';
+import type { TripType, UserSettings } from './engine/types';
 
 /** Identifies the chosen vehicle for display; MPG/tank live in `vehicle`. */
 export interface VehicleIdentity {
@@ -43,6 +44,33 @@ export function isHybridNoticeHidden(now: Date = new Date()): boolean {
   const seen = Number(localStorage.getItem(HYBRID_NOTICE_KEY));
   if (!Number.isFinite(seen) || seen === 0) return false;
   return now.getTime() - seen < HYBRID_NOTICE_HIDE_MS;
+}
+
+const LAST_TRIP_TYPE_KEY = 'gasmath.lastTripType.v1';
+const TRIP_TYPES: readonly TripType[] = ['round_trip', 'one_way'];
+
+/**
+ * The trip type used for the user's most recent calculation — the initial state
+ * of the fuel-amount screen's Round trip / One way control (PRD §5.2c). This is
+ * a convenience default, NOT a setting: it is never shown in Settings, and a
+ * fresh browser (or an unrecognised stored value) falls back to round trip.
+ */
+export function loadLastTripType(): TripType {
+  try {
+    const raw = localStorage.getItem(LAST_TRIP_TYPE_KEY);
+    return TRIP_TYPES.includes(raw as TripType) ? (raw as TripType) : DEFAULT_TRIP_TYPE;
+  } catch {
+    return DEFAULT_TRIP_TYPE; // storage blocked → just use the default
+  }
+}
+
+/** Remember the trip type of the calculation being run. Never throws: losing a convenience default must not abort a search. */
+export function saveLastTripType(tripType: TripType): void {
+  try {
+    localStorage.setItem(LAST_TRIP_TYPE_KEY, tripType);
+  } catch {
+    /* storage blocked or full — the default is a nicety, not worth failing for */
+  }
 }
 
 const NJ_BANNER_DISMISSED_KEY = 'gasmath.njSelfServeBannerDismissed.v1';

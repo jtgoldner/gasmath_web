@@ -1,11 +1,21 @@
+import { DEFAULT_TRIP_TYPE } from '../engine/engine';
+import type { TripType } from '../engine/types';
 import type { AppSettings } from '../storage';
 import { COPY } from './copy';
 import { headerHtml, settingsButton } from './header';
 
+const TRIP_TYPES: readonly TripType[] = ['round_trip', 'one_way'];
+
 export interface HomeProps {
   settings: AppSettings;
   onOpenSettings: () => void;
-  onFind: (sliderFraction: number) => void;
+  /** Fires with the gauge fraction AND the trip type selected at that moment (PRD §5.2c). */
+  onFind: (sliderFraction: number, tripType: TripType) => void;
+  /**
+   * Initial state of the Round trip / One way control: the user's last-used
+   * choice, supplied by the caller from storage. First visit → round trip.
+   */
+  tripType?: TripType;
   /** Show the "Hybrid Vehicle? Read This First!" prompt (hidden for 24h after a view). */
   showHybridNotice: boolean;
   onOpenHybridInfo: () => void;
@@ -32,6 +42,16 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
   const tank = props.settings.vehicle.tankCapacityGal;
   const minFraction = MIN_GALLONS / tank; // fraction that yields the 0.1 gal floor
   const { year, make, model } = props.settings.vehicleId;
+  const initialTrip = props.tripType ?? DEFAULT_TRIP_TYPE;
+  const trip = COPY.tripType;
+
+  const tripSegment = (value: TripType): string => `
+            <label class="trip-seg">
+              <input class="trip-input" type="radio" name="trip-type" value="${value}" data-act="trip-${value}"${
+                value === initialTrip ? ' checked' : ''
+              }>
+              <span class="trip-seg-label">${trip.labels[value]}</span>
+            </label>`;
 
   root.innerHTML = `
     <main class="screen">
@@ -87,6 +107,13 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
         <input class="pump-input" data-act="gauge" type="range" min="0" max="1" step="0.005" value="0.5"
                aria-label="${COPY.home.gaugeTitle}">
       </section>
+      <!-- Per-calculation choice, deliberately NOT in Settings: it must be visible
+           every time a calculation starts (PRD §5.2c). -->
+      <div class="trip-type" data-act="trip-type">
+        <div class="trip-toggle" role="radiogroup" aria-label="${trip.groupLabel}">${TRIP_TYPES.map(tripSegment).join('')}
+        </div>
+        <p class="trip-desc" data-act="trip-desc" aria-live="polite">${trip.descriptions[initialTrip]}</p>
+      </div>
       <button class="primary" data-act="find">${COPY.home.find}</button>
     </main>`;
 
@@ -142,10 +169,23 @@ export function renderHome(root: HTMLElement, props: HomeProps): void {
   track.addEventListener('pointerup', endDrag);
   track.addEventListener('pointercancel', endDrag);
 
+  // The DOM is the single source of truth for the selection: read at click time,
+  // so the value handed to onFind is exactly what the user is looking at.
+  const tripRadios = [...root.querySelectorAll<HTMLInputElement>('input[name="trip-type"]')];
+  const tripDesc = root.querySelector<HTMLElement>('[data-act="trip-desc"]')!;
+  function selectedTrip(): TripType {
+    return (tripRadios.find((r) => r.checked)?.value as TripType | undefined) ?? initialTrip;
+  }
+  for (const radio of tripRadios) {
+    radio.addEventListener('change', () => {
+      tripDesc.textContent = trip.descriptions[selectedTrip()];
+    });
+  }
+
   root.querySelector('[data-act="settings"]')!.addEventListener('click', props.onOpenSettings);
   root.querySelector('[data-act="hybrid"]')?.addEventListener('click', props.onOpenHybridInfo);
   findBtn.addEventListener('click', () => {
     // Guard in addition to the disabled attribute — zero gallons never proceeds.
-    if (Number(gauge.value) > 0) props.onFind(Number(gauge.value));
+    if (Number(gauge.value) > 0) props.onFind(Number(gauge.value), selectedTrip());
   });
 }

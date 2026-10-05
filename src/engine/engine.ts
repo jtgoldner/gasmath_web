@@ -1,8 +1,34 @@
 import { MAX_ROUTING_CANDIDATES, STALENESS_HOURS, TIE_BREAK_DOLLARS } from '../config';
-import type { Candidate, FuelGrade, PriceQuote, Station, UserSettings } from './types';
+import type { Candidate, FuelGrade, PriceQuote, Station, TripType, UserSettings } from './types';
 
 /** Float-comparison slack for the dollar tie window. */
 const EPSILON = 1e-9;
+
+/**
+ * How many times the one-way distance to a station counts as detour (PRD §5.2c).
+ * Round trip: there and back = 2×. One way: only the leg to the station = 1×.
+ *
+ * This is the ONLY place the trip type touches the math. Everything that costs
+ * a detour — ranking, the winner, both cards, the savings delta, the debug
+ * trace — goes through `detourMiles`, so it applies equally to routed (ORS)
+ * and estimated (haversine × circuity) distances.
+ */
+export const TRIP_MULTIPLIER: Record<TripType, number> = {
+  round_trip: 2,
+  one_way: 1,
+};
+
+/** First-visit default, and what any caller that doesn't say gets (PRD §5.2c). */
+export const DEFAULT_TRIP_TYPE: TripType = 'round_trip';
+
+export function tripMultiplier(tripType: TripType): number {
+  return TRIP_MULTIPLIER[tripType];
+}
+
+/** Extra miles driven to use this station: one-way distance × the trip multiplier. */
+export function detourMiles(candidate: Candidate, tripType: TripType = DEFAULT_TRIP_TYPE): number {
+  return candidate.distanceMiles * tripMultiplier(tripType);
+}
 
 export function selectedGrade(settings: UserSettings): FuelGrade {
   return settings.preferPremium ? 'premium' : 'regular';
@@ -12,18 +38,20 @@ export function gallonsNeeded(sliderFraction: number, tankCapacityGal: number): 
   return sliderFraction * tankCapacityGal;
 }
 
-export function detourGallons(roundTripExtraMiles: number, mpg: number): number {
-  return roundTripExtraMiles / mpg;
+export function detourGallons(detourMilesDriven: number, mpg: number): number {
+  return detourMilesDriven / mpg;
 }
 
 /**
- * PRD §6: effective_cost = (gallons_needed + detour_gallons) × station_price.
+ * PRD §6: effective_cost = (gallons_needed + detour_gallons) × station_price,
+ * where detour_gallons = (one-way distance × trip multiplier) ÷ mpg.
  * Candidates must already be filtered for grade availability.
  */
 export function effectiveCost(
   candidate: Candidate,
   settings: UserSettings,
   sliderFraction: number,
+  tripType: TripType = DEFAULT_TRIP_TYPE,
 ): number {
   const quote = candidate.station.prices[selectedGrade(settings)];
   if (!quote) {
@@ -33,7 +61,7 @@ export function effectiveCost(
   }
   const gallons =
     gallonsNeeded(sliderFraction, settings.vehicle.tankCapacityGal) +
-    detourGallons(candidate.roundTripExtraMiles, settings.vehicle.combinedMpg);
+    detourGallons(detourMiles(candidate, tripType), settings.vehicle.combinedMpg);
   return gallons * quote.price;
 }
 
@@ -77,6 +105,12 @@ export type Verdict =
       savings: number;
       /** True → show affirming copy instead of "$0 savings" (PRD §5.2). */
       winnerIsNearest: boolean;
+      /**
+       * The trip type every figure above was costed under. Stamped here so the
+       * verdict screen's "which assumption produced this?" line reads the very
+       * value the math used, rather than a copy that could disagree with it.
+       */
+      tripType: TripType;
     }
   | { kind: 'offer-relax-top-tier' }
   | { kind: 'offer-relax-staleness' }
@@ -96,6 +130,7 @@ export function decide(
   sliderFraction: number,
   now: Date,
   relax: Relaxations = {},
+  tripType: TripType = DEFAULT_TRIP_TYPE,
 ): Verdict {
   const eligible = filterCandidates(candidates, settings, now, relax);
 
@@ -121,7 +156,7 @@ export function decide(
 
   const costed = eligible.map((candidate) => ({
     candidate,
-    cost: effectiveCost(candidate, settings, sliderFraction),
+    cost: effectiveCost(candidate, settings, sliderFraction, tripType),
   }));
 
   const minCost = Math.min(...costed.map((x) => x.cost));
@@ -141,6 +176,7 @@ export function decide(
     nearestCost: nearest.cost,
     savings: nearest.cost - winner.cost,
     winnerIsNearest: winner.candidate.station.placeId === nearest.candidate.station.placeId,
+    tripType,
   };
 }
 

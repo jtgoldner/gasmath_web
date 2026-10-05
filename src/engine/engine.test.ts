@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_ROUTING_CANDIDATES, STALENESS_HOURS, TIE_BREAK_DOLLARS } from '../config';
 import {
+  DEFAULT_TRIP_TYPE,
+  TRIP_MULTIPLIER,
   decide,
   detourGallons,
+  detourMiles,
   effectiveCost,
   filterCandidates,
   gallonsNeeded,
   isFresh,
   selectRoutingCandidates,
+  tripMultiplier,
 } from './engine';
 import type { Candidate, PriceQuote, Station, UserSettings } from './types';
 
@@ -35,7 +39,6 @@ function candidate(distanceMiles: number, overrides: Partial<Station> = {}): Can
   return {
     station: station(overrides),
     distanceMiles,
-    roundTripExtraMiles: 2 * distanceMiles,
   };
 }
 
@@ -279,5 +282,106 @@ describe('routing pre-filter (MAX_ROUTING_CANDIDATES cap)', () => {
       (a, b) => a.station.prices.regular!.price - b.station.prices.regular!.price,
     )[0];
     expect(picked).toContain(cheapest);
+  });
+});
+
+describe('trip type (PRD §5.2c)', () => {
+  it('pins the multiplier: round trip = 2, one way = 1', () => {
+    expect(TRIP_MULTIPLIER.round_trip).toBe(2);
+    expect(TRIP_MULTIPLIER.one_way).toBe(1);
+    expect(tripMultiplier('round_trip')).toBe(2);
+    expect(tripMultiplier('one_way')).toBe(1);
+  });
+
+  it('defaults to round trip, so callers that do not say keep the old behaviour', () => {
+    expect(DEFAULT_TRIP_TYPE).toBe('round_trip');
+    const c = candidate(4);
+    expect(detourMiles(c)).toBe(8);
+    expect(effectiveCost(c, settings(), 0.5)).toBe(effectiveCost(c, settings(), 0.5, 'round_trip'));
+  });
+
+  it('detour miles = one-way distance × multiplier, for routed and estimated distances alike', () => {
+    for (const distanceSource of ['routed', 'estimated', 'mock'] as const) {
+      const c: Candidate = { ...candidate(5), distanceSource };
+      expect(detourMiles(c, 'round_trip')).toBe(10);
+      expect(detourMiles(c, 'one_way')).toBe(5);
+    }
+  });
+
+  it('one-way cost is lower than round-trip by exactly (one-way distance ÷ mpg) × price, for every station', () => {
+    const s = settings(); // 30 mpg, 15 gal tank
+    const stations = [
+      candidate(0.4, { prices: { regular: quote(3.19) } }),
+      candidate(2.5, { prices: { regular: quote(3.05) } }),
+      candidate(7.75, { prices: { regular: quote(2.89) } }),
+      candidate(31, { prices: { regular: quote(4.5) } }),
+    ];
+    for (const c of stations) {
+      const price = c.station.prices.regular!.price;
+      const roundTrip = effectiveCost(c, s, 0.5, 'round_trip');
+      const oneWay = effectiveCost(c, s, 0.5, 'one_way');
+      expect(oneWay).toBeLessThan(roundTrip);
+      expect(roundTrip - oneWay).toBeCloseTo((c.distanceMiles / s.vehicle.combinedMpg) * price, 10);
+    }
+  });
+
+  it('applies to the premium grade the same way', () => {
+    const c = candidate(6, { prices: { regular: quote(3.0), premium: quote(3.6) } });
+    const s = settings({ preferPremium: true });
+    expect(effectiveCost(c, s, 1, 'one_way')).toBeCloseTo((15 + 6 / 30) * 3.6);
+    expect(effectiveCost(c, s, 1, 'round_trip')).toBeCloseTo((15 + 12 / 30) * 3.6);
+  });
+
+  describe('switching trip type changes which station wins', () => {
+    // 15 gal tank, half a tank = 7.5 gal, 30 mpg.
+    //   near: 1 mi,  $3.50   far: 6 mi, $3.40
+    //   round trip: near (7.5 + 2/30) × 3.50 = 26.483   far (7.5 + 12/30) × 3.40 = 26.860  → NEAR wins (by 0.38)
+    //   one way:    near (7.5 + 1/30) × 3.50 = 26.367   far (7.5 +  6/30) × 3.40 = 26.180  → FAR wins  (by 0.19)
+    // Both margins clear the $0.05 tie window, so neither outcome leans on tie-breaking.
+    const near = () => candidate(1, { placeId: 'near', prices: { regular: quote(3.5) } });
+    const far = () => candidate(6, { placeId: 'far', prices: { regular: quote(3.4) } });
+
+    it('round trip: the closer, pricier station wins', () => {
+      const v = decide([near(), far()], settings(), 0.5, NOW, {}, 'round_trip');
+      expect(v.kind).toBe('verdict');
+      if (v.kind !== 'verdict') return;
+      expect(v.winner.station.placeId).toBe('near');
+      expect(v.winnerIsNearest).toBe(true);
+      expect(v.tripType).toBe('round_trip');
+    });
+
+    it('one way: the farther, cheaper station wins', () => {
+      const v = decide([near(), far()], settings(), 0.5, NOW, {}, 'one_way');
+      expect(v.kind).toBe('verdict');
+      if (v.kind !== 'verdict') return;
+      expect(v.winner.station.placeId).toBe('far');
+      expect(v.winnerIsNearest).toBe(false);
+      expect(v.nearest.station.placeId).toBe('near');
+      expect(v.tripType).toBe('one_way');
+    });
+
+    it('flows into both card costs and the savings delta under the same trip type', () => {
+      const s = settings();
+      const v = decide([near(), far()], s, 0.5, NOW, {}, 'one_way');
+      if (v.kind !== 'verdict') throw new Error('expected a verdict');
+      // Each card's estimated cost is the one-way cost of that station...
+      expect(v.winnerCost).toBeCloseTo(effectiveCost(far(), s, 0.5, 'one_way'));
+      expect(v.nearestCost).toBeCloseTo(effectiveCost(near(), s, 0.5, 'one_way'));
+      // ...and "You'll save $X" is exactly the difference between those two cards.
+      expect(v.savings).toBeCloseTo(v.nearestCost - v.winnerCost);
+      expect(v.savings).toBeGreaterThan(TIE_BREAK_DOLLARS);
+      // It is NOT the round-trip delta (which would have the near station winning).
+      const rt = decide([near(), far()], s, 0.5, NOW, {}, 'round_trip');
+      if (rt.kind !== 'verdict') throw new Error('expected a verdict');
+      expect(v.winnerCost).not.toBeCloseTo(rt.winnerCost);
+    });
+  });
+
+  it('does not touch filtering: relaxation offers are identical under both trip types', () => {
+    const offBrand = candidate(2, { isTopTier: false });
+    for (const trip of ['round_trip', 'one_way'] as const) {
+      expect(decide([offBrand], settings(), 0.5, NOW, {}, trip).kind).toBe('offer-relax-top-tier');
+      expect(decide([], settings(), 0.5, NOW, {}, trip).kind).toBe('no-stations');
+    }
   });
 });

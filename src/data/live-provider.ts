@@ -179,7 +179,6 @@ export const liveProvider: StationProvider = {
       const estimate: Candidate = {
         station,
         distanceMiles: straightLineMiles * CIRCUITY,
-        roundTripExtraMiles: 2 * straightLineMiles * CIRCUITY,
         distanceSource: 'estimated',
       };
       return { station, loc: { lat: w.lat, lng: w.lng }, straightLineMiles, estimate };
@@ -222,7 +221,7 @@ export const liveProvider: StationProvider = {
     seeds.forEach((seed, i) => {
       const d = distancesMiles[i];
       if (typeof d !== 'number') return; // unroutable → excluded (never guess)
-      routed.push({ station: seed.station, distanceMiles: d, roundTripExtraMiles: 2 * d, distanceSource: 'routed' });
+      routed.push({ station: seed.station, distanceMiles: d, distanceSource: 'routed' });
     });
 
     const ineligible = provisional.filter((c) => !eligibleIds.has(c.station.placeId));

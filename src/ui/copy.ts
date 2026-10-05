@@ -35,6 +35,19 @@ export const COPY = {
     hybridNotice: 'Hybrid Vehicle? Read This First!',
   },
 
+  // COPY: draft. Trip type is a per-calculation choice on the fuel-amount screen
+  // (PRD §5.2c): does the trip back count toward the detour? Keyed by TripType.
+  tripType: {
+    groupLabel: 'Trip type',
+    labels: { round_trip: 'Round trip', one_way: 'One way' },
+    descriptions: {
+      round_trip: 'Coming back to this location',
+      one_way: 'Going other places',
+    },
+    // Verdict screen: names the assumption that produced the answer.
+    verdictLine: (label: string) => `Trip type: ${label}`,
+  },
+
   hybrid: {
     heading: 'A note for hybrid drivers',
     body: "We'll do our best to estimate your gas consumption and deliver a recommendation. But please know there's a much higher degree of error with hybrid vehicles, due to their more complex pattern of gasoline consumption.",

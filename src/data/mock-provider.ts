@@ -49,8 +49,6 @@ function toCandidate(spec: MockSpec, index: number): Candidate {
       },
     },
     distanceMiles: spec.distanceMiles,
-    // MVP has no destination input: the detour is simply there-and-back.
-    roundTripExtraMiles: 2 * spec.distanceMiles,
     distanceSource: 'mock',
   };
 }

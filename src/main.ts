@@ -6,14 +6,16 @@ import { mockProvider } from './data/mock-provider';
 import type { LatLng, StationProvider } from './data/provider';
 import { selectClubNote } from './club-note';
 import { decide, selectedGrade, type Relaxations } from './engine/engine';
-import type { Candidate } from './engine/types';
+import type { Candidate, TripType } from './engine/types';
 import { isUserInNewJersey } from './location';
 import {
   dismissNjBanner,
   isHybridNoticeHidden,
   isNjBannerDismissed,
+  loadLastTripType,
   loadSettings,
   markHybridNoticeSeen,
+  saveLastTripType,
   saveSettings,
   type AppSettings,
 } from './storage';
@@ -50,6 +52,8 @@ let session: {
   location: LatLng;
   candidates: Candidate[];
   fraction: number;
+  /** Chosen on the fuel-amount screen for THIS calculation (PRD §5.2c); every retry reuses it. */
+  tripType: TripType;
   relax: Relaxations;
 } | null = null;
 
@@ -108,6 +112,8 @@ function showHome(): void {
     settings,
     onOpenSettings: showSettings,
     onFind: startSearch,
+    // Convenience default only: whatever the user ran last time (round trip on a first visit).
+    tripType: loadLastTripType(),
     showHybridNotice: !isHybridNoticeHidden(),
     onOpenHybridInfo: showHybridInfo,
   });
@@ -144,16 +150,19 @@ function showSearchFailure(err: unknown, retry: () => void): void {
   showError();
 }
 
-async function startSearch(fraction: number): Promise<void> {
+async function startSearch(fraction: number, tripType: TripType): Promise<void> {
+  // Remember it as the next calculation's starting point. Done up front so even
+  // a search that later fails still records what the user chose.
+  saveLastTripType(tripType);
   showLoading();
   track('search_started');
   const location = await locate();
   try {
     const candidates = await provider.getCandidates(location, settings!, {}, DEBUG);
-    session = { location, candidates, fraction, relax: {} };
+    session = { location, candidates, fraction, tripType, relax: {} };
     showVerdict();
   } catch (err) {
-    showSearchFailure(err, () => void startSearch(fraction));
+    showSearchFailure(err, () => void startSearch(fraction, tripType));
   }
 }
 
@@ -179,11 +188,20 @@ async function acceptRelax(patch: Relaxations): Promise<void> {
 
 function showVerdict(): void {
   if (!settings || !session) return showHome();
-  const verdict = decide(session.candidates, settings, session.fraction, new Date(), session.relax);
+  const verdict = decide(
+    session.candidates,
+    settings,
+    session.fraction,
+    new Date(),
+    session.relax,
+    session.tripType,
+  );
   // Aggregate, non-identifying: which outcome the user saw, and (when there's a
   // verdict) whether the winner was already the nearest and the dollar savings.
   track('verdict_shown', {
     kind: verdict.kind,
+    trip_type: session.tripType, // 'round_trip' | 'one_way' — no location or vehicle data
+
     ...(verdict.kind === 'verdict'
       ? { winner_is_nearest: verdict.winnerIsNearest, savings: Math.round(verdict.savings) }
       : {}),
@@ -221,7 +239,14 @@ function showVerdict(): void {
     clubNote,
     ...(DEBUG
       ? {
-          debugTrace: buildDebugTrace(session.candidates, settings, session.fraction, new Date(), session.relax),
+          debugTrace: buildDebugTrace(
+            session.candidates,
+            settings,
+            session.fraction,
+            new Date(),
+            session.relax,
+            session.tripType,
+          ),
           providerDebugMeta: provider.getDebugMeta?.() ?? null,
           debugLocationOverride: DEBUG_LOCATION,
           debugVehicle: buildDebugVehicleInfo(settings),
